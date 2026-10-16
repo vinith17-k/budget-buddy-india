@@ -1,110 +1,80 @@
-# Budget Coach 💰
+# Budget Coach 💰 (Vercel-Ready)
 
-> AI-powered personal finance coach for India — built with Gemini AI, Next.js, and FastAPI.
+> AI-powered personal finance coach for India — built with Next.js App Router, Gemini AI, and pure TypeScript. Strictly follows the brutalist UI design from `Budget Coach.html`.
 
-## What's Inside
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvinitharidas8-png%2Fbudget-buddy-india.git&env=GEMINI_API_KEY&envDescription=Free%20API%20key%20from%20Google%20AI%20Studio)
 
-The app strictly follows the original `Budget Coach.html` design (brutalist aesthetic, Rubik Dirt + Space Mono fonts, orange accent, hand-drawn SVG filter) and makes it **fully functional** with real AI.
+---
 
+## ⚡ 1-Minute Vercel Deployment
+
+1. **Push your code to GitHub**:
+   ```bash
+   git push origin master
+   ```
+2. **Go to [Vercel](https://vercel.com/new)** and click **Import** on `budget-buddy-india`.
+3. In **Environment Variables**, add:
+   - **`GEMINI_API_KEY`**: *(Optional)* Your free key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+     *(If omitted, the app automatically runs in deterministic offline AI mode with zero errors!)*
+4. Click **Deploy**! 🚀
+
+---
+
+## 💻 Local Development
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. (Optional) Add your Gemini key in .env.local
+echo "GEMINI_API_KEY=your_key_here" > .env.local
+
+# 3. Run dev server
+npm run dev
 ```
-Budget Coach/
-├── Budget Coach.html      ← original (untouched)
-├── start.ps1              ← one-click start script
-├── backend/               ← Python FastAPI + Gemini AI
-│   ├── main.py            ← all API endpoints
-│   ├── agent.py           ← Gemini tool-calling agent
-│   ├── finance.py         ← deterministic finance math
-│   ├── database.py        ← SQLite models (SQLAlchemy)
-│   └── requirements.txt
-└── frontend/              ← Next.js 16 app
-    ├── app/
-    │   ├── page.tsx       ← main app (chat + all panels)
-    │   └── globals.css    ← faithfully ported from HTML
-    └── .env.local
-```
 
-## Setup (5 minutes)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 1. Get a free Gemini API Key
-👉 https://aistudio.google.com/app/apikey (free, no credit card)
-
-### 2. Add the key to backend
-Edit `backend/.env`:
-```
-GEMINI_API_KEY=your_actual_key_here
-```
-
-### 3. Start the app
-
-**Option A — One script:**
+Or double-click:
 ```powershell
 .\start.ps1
 ```
 
-**Option B — Manual (two terminals):**
+---
 
-**Terminal 1 — Backend:**
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
+## 🏗️ Architecture
 
-**Terminal 2 — Frontend:**
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Then open http://localhost:3000
-
-## Features
-
-| Feature | Status |
-|---|---|
-| 💬 AI Chat (Gemini 1.5 Flash) | ✅ |
-| 📝 Expense logging with confirmation | ✅ |
-| 💸 Affordability checker | ✅ |
-| 🔮 What-if simulator | ✅ |
-| 📊 Budget by category | ✅ |
-| 🎯 Savings goals | ✅ |
-| 💡 Spending insights + forecast | ✅ |
-| 🏆 XP / Level / Streak gamification | ✅ |
-| 📂 CSV import | ✅ |
-| 🌙 Dark mode | ✅ |
-| 📱 Mobile responsive | ✅ |
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/chat` | Send a message to the AI coach |
-| POST | `/api/confirm-expense` | Confirm a pending expense |
-| GET | `/api/profile/{user_id}` | Get user profile + balance |
-| GET | `/api/transactions/{user_id}` | List transactions |
-| GET | `/api/budget/{user_id}` | Get budget status |
-| GET | `/api/goals/{user_id}` | Get savings goals |
-| GET | `/api/insights/{user_id}` | Get spending insights |
-| POST | `/api/import/{user_id}` | Preview CSV import |
-
-Full API docs: http://localhost:8000/docs
-
-## Architecture
+Everything is unified into a single Next.js project with App Router Serverless Functions:
 
 ```
-User
-  │  (Next.js frontend)
-  │  ── talks to ──
-  ↓
-FastAPI Backend
-  │  ── orchestrates ──
-  ├── finance.py          ← deterministic math (never hallucinated)
-  ├── Gemini 1.5 Flash    ← natural language understanding
-  │     └── tool calling  ← grounded in real DB data
-  └── SQLite DB           ← your actual transactions, budgets, goals
+Budget Coach/
+├── app/
+│   ├── page.tsx               ← Brutalist UI (matches original HTML exactly)
+│   ├── layout.tsx
+│   ├── globals.css            ← Fonts, brutalist borders, SVG rough filter
+│   └── api/                   ← Vercel Serverless Functions
+│       ├── chat/route.ts      ← Gemini AI tool-calling agent
+│       ├── confirm-expense/   ← Expense logger & gamification
+│       ├── profile/[userId]/  ← User state, streaks, quests
+│       ├── budget/            ← Budget limits & tracking
+│       ├── goals/             ← Savings goals tracker
+│       ├── insights/[userId]/ ← Spending burn rate & forecasts
+│       └── transactions/      ← Transaction ledger
+├── lib/
+│   ├── agent.ts               ← Gemini agent + offline fallback
+│   ├── finance.ts             ← Deterministic financial math (no hallucinations)
+│   ├── store.ts               ← In-memory storage & seed data
+│   └── types.ts               ← TypeScript interfaces
+├── Budget Coach.html          ← Original reference design
+└── package.json               ← Next.js dependencies
 ```
 
-**Key principle:** All financial calculations are in Python (`finance.py`). Gemini only explains results in natural language — it never invents numbers.
+---
+
+## ✨ Features
+
+- **Conversational Expense Logging**: Say *"I spent ₹150 on lunch"* — the AI extracts details, picks a category, and displays an **Entry Card** with `Confirm` and `Change category`.
+- **Affordability Analysis**: Ask *"Can I afford ₹1,000?"* — checks your remaining income, days to next salary, and minimum balance.
+- **What-If Goal Simulator**: Ask *"What if I save ₹500 more?"* — calculates how many months earlier you reach your goals.
+- **Gamification**: XP points, Level ups, daily quests (3 expenses/day), and celebration confetti.
+- **Brutalist Design**: Faithful replica of `Budget Coach.html` with rough hand-drawn filters, dark/light theme switch, and mobile bottom navigation.

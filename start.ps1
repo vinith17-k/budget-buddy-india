@@ -1,41 +1,15 @@
-# Budget Coach — Start Script
-# Run this from the "Budget Coach" project root
+# Budget Coach — Unified Startup Script
+Write-Host "=== Starting Budget Coach (Unified Next.js) ===" -ForegroundColor Cyan
 
-Write-Host "=== Budget Coach Startup ===" -ForegroundColor Cyan
-
-# 1. Backend
-Write-Host "`n[1/2] Starting FastAPI backend..." -ForegroundColor Yellow
-Set-Location backend
-
-if (-not (Test-Path ".venv")) {
-    Write-Host "Creating Python virtual environment..." -ForegroundColor Gray
-    python -m venv .venv
+# Install dependencies if node_modules is missing
+if (-not (Test-Path "node_modules")) {
+    Write-Host "Installing dependencies..." -ForegroundColor Yellow
+    npm install
 }
 
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt -q
-
-# Check for API key
-$envContent = Get-Content .env -Raw
-if ($envContent -match "YOUR_GEMINI_API_KEY_HERE") {
-    Write-Host "`n⚠️  IMPORTANT: Please set your Gemini API key in backend/.env" -ForegroundColor Red
-    Write-Host "   Get a free key at: https://aistudio.google.com/app/apikey" -ForegroundColor Yellow
-    Write-Host "   Then replace: GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE" -ForegroundColor Yellow
-    Read-Host "`nPress Enter after setting the API key to continue..."
-}
-
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; .\.venv\Scripts\Activate.ps1; uvicorn main:app --reload --port 8000"
-Set-Location ..
-
-# 2. Frontend
-Write-Host "`n[2/2] Starting Next.js frontend..." -ForegroundColor Yellow
-Set-Location frontend
+Write-Host "`nStarting Next.js server on http://localhost:3000..." -ForegroundColor Green
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$PWD'; npm run dev"
-Set-Location ..
 
-Write-Host "`n✅ Both servers are starting!" -ForegroundColor Green
-Write-Host "   Backend:  http://localhost:8000" -ForegroundColor Cyan
-Write-Host "   Frontend: http://localhost:3000" -ForegroundColor Cyan
-Write-Host "`nOpening browser in 5 seconds..." -ForegroundColor Gray
-Start-Sleep 5
+Write-Host "`nOpening browser in 3 seconds..." -ForegroundColor Gray
+Start-Sleep 3
 Start-Process "http://localhost:3000"

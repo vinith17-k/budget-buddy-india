@@ -6,18 +6,20 @@ __pycache__/
 *.pyc
 
 # Next.js build
-frontend/.next/
-frontend/out/
+.next/
+out/
+build/
 
 # Databases & local state
 *.db
 *.sqlite3
 
 # Environment files
-backend/.env
-frontend/.env.local
+.env*.local
 .env
 
-# OS files
+# OS & IDE files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
