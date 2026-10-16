@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Budget Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&family=Caveat:wght@600&family=Rubik+Dirt&display=swap" rel="stylesheet">
+<style>
+:root{--wall:#d4d4d0;--spot:#f4f4f1;--paper:#f4efe3;--ink:#161616;--mute:#5d5b56;--acc:#f0481f;--line:rgba(0,0,0,.08);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--wall:#1c1c1b;--spot:#3b3b38;--paper:#2b2925;--ink:#f3efe6;--mute:#b3aea3;--line:rgba(255,255,255,.07);color-scheme:dark}}
+:root[data-theme="dark"]{--wall:#1c1c1b;--spot:#3b3b38;--paper:#2b2925;--ink:#f3efe6;--mute:#b3aea3;--line:rgba(255,255,255,.07);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:radial-gradient(ellipse 55% 40% at 50% 0,var(--spot),transparent 72%),linear-gradient(var(--line) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/44px 44px;background-color:var(--wall);color:var(--ink);font:400 14px/1.5 'Space Mono',ui-monospace,monospace}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--wall);z-index:10}
+.app{height:100%;max-width:1080px;margin:auto;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:26px}
+.main{display:flex;flex-direction:column;min-height:0}
+h1{font:400 clamp(30px,6vw,52px)/1 'Rubik Dirt','Archivo Black',Impact,sans-serif}
+.dot{display:inline-block;width:.72em;height:.72em;border-radius:50%;background:var(--acc);margin:0 .02em;vertical-align:-.02em}
+.hand{font:600 20px 'Caveat',cursive;color:var(--mute)}
+.head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:4px 4px 8px}
+.tag{display:inline-block;border:1px solid var(--ink);background:var(--paper);padding:0 6px;font-size:11px}
+.top{display:none;gap:10px;align-items:center;background:var(--paper);border:2px solid var(--ink);padding:8px 10px;margin-bottom:6px}
+.top .xp{flex:1}
+.xp{height:12px;border:2px solid var(--ink);background:transparent}
+.xp i{display:block;height:100%;background:var(--acc);width:0;transition:width .5s}
+.chat{flex:1;min-height:0;overflow-y:auto;padding:10px 4px 14px;display:flex;flex-direction:column;gap:16px}
+.msg{max-width:min(580px,94%)}
+.b{border:2px solid var(--ink);padding:12px 14px}
+.coach .b{background:var(--paper);border-radius:4px 18px 18px 18px;box-shadow:4px 4px 0 var(--ink)}
+.user{align-self:flex-end}
+.user .b{background:var(--ink);color:var(--paper);border-radius:18px 4px 18px 18px}
+.typing{letter-spacing:3px;color:var(--mute)}
+.card{margin-top:10px;border:2px dashed var(--ink);padding:10px 12px;background:var(--wall)}
+.card h3{font:400 15px 'Archivo Black',sans-serif;margin-bottom:6px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dotted var(--mute)}
+.row b{font-weight:700}
+.band{background:var(--acc);color:#161616;font-weight:700;padding:2px 8px;margin:8px 0;display:inline-block}
+.bar{height:22px;margin-top:8px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 13px)}
+.stamp{display:inline-block;border:3px solid var(--ink);font:400 18px 'Archivo Black',sans-serif;padding:0 10px;transform:rotate(-6deg);margin-top:8px}
+.stamp.hot{border-color:var(--acc);color:var(--acc)}
+.btns{display:flex;gap:8px;margin-top:10px}
+button{font:700 13px 'Space Mono',monospace;color:var(--ink);cursor:pointer}
+.btn{min-height:46px;padding:0 18px;border:2px solid var(--ink);background:var(--paper)}
+.btn.go{background:var(--acc);color:#161616}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 10px}
+.chip{min-height:44px;padding:0 14px;border:2px solid var(--ink);background:var(--paper);border-radius:999px}
+.chip:hover,.btn:hover:not(:disabled){background:var(--acc);color:#161616}
+.comp{display:flex;gap:8px}
+input{flex:1;min-width:0;height:54px;padding:0 14px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:400 15px 'Space Mono',monospace;border-radius:0}
+.send{width:70px;height:54px;border:2px solid var(--ink);background:var(--acc);color:#161616;font-size:20px}
+.foot{font-size:11px;color:var(--mute);padding-top:6px}
+.side{display:flex;flex-direction:column;gap:30px;padding-top:26px;overflow-y:auto;min-height:0}
+.pass{position:relative;background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:14px;box-shadow:5px 5px 0 var(--ink)}
+.pass h2{font:400 22px 'Archivo Black',sans-serif;letter-spacing:-.5px}
+.lvlband{background:var(--acc);color:#161616;font-weight:700;padding:4px 10px;margin:10px -14px;display:flex;justify-content:space-between}
+.note{position:relative;padding:18px 14px 14px;color:#161616;box-shadow:3px 4px 0 rgba(0,0,0,.25)}
+.note.y{background:#ffe27a;transform:rotate(-2deg)}
+.note.u{background:#c3d7ff;transform:rotate(1.5deg)}
+.pin{position:absolute;top:-9px;left:50%;width:18px;height:18px;border-radius:50%;background:var(--acc);border:2px solid #161616;transform:translateX(-50%)}
+.note .hand{color:#161616;font-size:24px;line-height:1.1}
+.note .xp{border-color:#161616;margin-top:8px}
+.br{display:grid;grid-template-columns:70px 1fr 38px;gap:6px;align-items:center;font-size:12px;margin-top:6px}
+.br i{height:10px;border:2px solid #161616;display:block}
+.br i b{display:block;height:100%;background:#161616}
+.br.hot i b{background:var(--acc)}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 16px);transform:translate(-50%,-80px);background:var(--ink);color:var(--paper);padding:10px 18px;font-weight:700;z-index:20;transition:transform .3s}
+.toast.on{transform:translate(-50%,0)}
+.conf{position:fixed;top:-12px;width:9px;height:14px;z-index:20;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;opacity:.2;mix-blend-mode:multiply;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+:root[data-theme="dark"] body::after{filter:invert(1);mix-blend-mode:screen;opacity:.13}
+h1,.b,.pass,.note,.chip,.btn,.stamp,.xp,.tog,.arrow,.send,input{filter:url(#rough)}
+.arrow{color:var(--ink);margin-left:-6px}
+.pass::before{content:"";position:absolute;top:-12px;left:22px;width:76px;height:22px;background:rgba(255,226,122,.75);transform:rotate(-4deg)}
+.tog{margin-left:auto;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px 0 8px;border:2px solid var(--ink);background:var(--paper);border-radius:999px}
+.knob{width:36px;height:20px;border:2px solid var(--ink);border-radius:999px;position:relative;background:var(--wall)}
+.knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--acc);transition:transform .25s}
+.tog[aria-checked="true"] .knob::after{transform:translateX(16px)}
+@media(max-width:899px){.app{grid-template-columns:minmax(0,1fr);padding:10px}.side{display:none}.top{display:flex}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}.conf{display:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="3"/></filter></svg>
+<div class="toast" id="toast" role="status"></div>
+<div class="app">
+  <main class="main">
+    <div class="head">
+      <h1 aria-label="Budget Coach">BUDGET C<span class="dot"></span>ACH</h1>
+      <span class="hand">just tell me what you spent</span>
+      <svg class="arrow" width="70" height="40" viewBox="0 0 70 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M4 6 C30 2 52 12 60 32"/><path d="M50 28 L60 33 L63 22"/></svg>
+      <button class="tog" id="tog" role="switch" aria-checked="false" aria-label="Dark theme"><span class="knob"></span><span class="tl">Light</span></button>
+    </div>
+    <div class="top">
+      <span class="tag">Lv <span class="lvl"></span></span>
+      <div class="xp"><i class="xpf"></i></div>
+      <span>🔥 <span class="stk"></span></span>
+      <span class="tag">Quest <span class="qn"></span></span>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="chips">
+      <button class="chip" data-t="I spent ₹150 on lunch">Log ₹150 lunch</button>
+      <button class="chip" data-t="Can I afford ₹1,000?">Can I afford ₹1,000?</button>
+      <button class="chip" data-t="What if I save ₹500 more?">What if I save ₹500 more?</button>
+      <button class="chip" data-t="How is my budget?">My budget</button>
+    </div>
+    <div class="comp">
+      <input id="inp" type="text" placeholder="Try: I spent ₹80 on chai" aria-label="Message your coach" autocomplete="off">
+      <button class="send" id="send" aria-label="Send">➤</button>
+    </div>
+    <p class="foot">Demo with sample data. Replies are scripted, numbers come from plain code.</p>
+  </main>
+
+  <aside class="side">
+    <section class="pass">
+      <span class="tag" style="position:absolute;top:-10px;right:12px">a. Pass card</span>
+      <h2>Vinit</h2>
+      <div class="lvlband"><span>Level <span class="lvl"></span></span><span>🔥 <span class="stk"></span> days</span></div>
+      <div class="xp"><i class="xpf"></i></div>
+      <div class="foot xpt"></div>
+      <div class="row" style="margin-top:8px"><span>Left to spend</span><b class="bal"></b></div>
+      <div class="row"><span>Days to next income</span><b class="days"></b></div>
+      <div class="bar" aria-hidden="true"></div>
+    </section>
+    <section class="note y">
+      <span class="pin"></span>
+      <div class="hand">Today's quest</div>
+      <div>Log 3 expenses (<span class="qn"></span>)</div>
+      <div class="xp"><i class="qf"></i></div>
+    </section>
+    <section class="note u">
+      <span class="pin"></span>
+      <div class="hand">Budget health</div>
+      <div class="bud"></div>
+    </section>
+  </aside>
+</div>
+
+<script>
+const S={bal:3200,days:11,xp:320,lvl:4,streak:6,q:1,qdone:false,bills:1200,min:500,
+  cats:{Food:[2400,3000],Transport:[600,1000],Fun:[900,1000],Other:[200,800]}};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const R=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const chat=$('#chat');
+function budHTML(){return Object.entries(S.cats).map(([k,[s,l]])=>{const p=Math.round(s/l*100);
+ return `<div class="br ${p>=90?'hot':''}"><span>${k}</span><i><b style="width:${Math.min(p,100)}%"></b></i><span>${p}%</span></div>`}).join('')}
+function hud(){
+ $$('.lvl').forEach(e=>e.textContent=S.lvl);
+ $$('.xpf').forEach(e=>e.style.width=S.xp/5+'%');
+ $$('.xpt').forEach(e=>e.textContent=S.xp+' / 500 XP');
+ $$('.stk').forEach(e=>e.textContent=S.streak);
+ $$('.qn').forEach(e=>e.textContent=Math.min(S.q,3)+'/3');
+ $$('.qf').forEach(e=>e.style.width=Math.min(S.q,3)/3*100+'%');
+ $$('.bal').forEach(e=>e.textContent=R(S.bal));
+ $$('.days').forEach(e=>e.textContent=S.days);
+ $$('.bud').forEach(e=>e.innerHTML=budHTML());
+}
+function mk(role,html){const d=document.createElement('div');d.className='msg '+role;d.innerHTML='<div class="b">'+html+'</div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d}
+function say(html,after,delay=450){const m=mk('coach','<span class="typing">● ● ●</span>');
+ setTimeout(()=>{m.querySelector('.b').innerHTML=html;if(after)after(m);chat.scrollTop=chat.scrollHeight},delay)}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)}
+function boom(){for(let i=0;i<28;i++){const c=document.createElement('i');c.className='conf';
+ c.style.left=Math.random()*100+'vw';c.style.background=['#f0481f','#ffe27a','#c3d7ff','#161616'][i%4];
+ c.style.animationDelay=Math.random()*.4+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),2200)}}
+function gain(n){S.xp+=n;let up=false;while(S.xp>=500){S.xp-=500;S.lvl++;up=true}return up}
+
+function guess(l){
+ if(/lunch|dinner|food|chai|tea|snack|coffee|canteen|mess|biryani/.test(l))return'Food';
+ if(/bus|auto|metro|cab|uber|petrol|train|ola/.test(l))return'Transport';
+ if(/movie|game|netflix|party|spotify|concert/.test(l))return'Fun';return'Other'}
+const CATS=['Food','Transport','Fun','Other'];
+
+function entry(t,n){
+ let cat=guess(t.toLowerCase());
+ const desc=t.replace(/^i\s+(spent|paid|bought|got)\s*/i,'').slice(0,40);
+ say(`Got it. Save this entry?<div class="card"><h3>Entry card</h3>
+  <div class="row"><span>Amount</span><b>${R(n)}</b></div>
+  <div class="row"><span>Note</span><b class="d"></b></div>
+  <div class="row"><span>Category</span><b class="c">${cat}</b></div>
+  <span class="band">Not saved yet</span>
+  <div class="btns"><button class="btn go ok">Confirm</button><button class="btn ed">Change category</button></div>
+  <div class="bar" aria-hidden="true"></div></div>`,m=>{
+  m.querySelector('.d').textContent=desc;
+  m.querySelector('.ed').onclick=()=>{cat=CATS[(CATS.indexOf(cat)+1)%4];m.querySelector('.c').textContent=cat};
+  m.querySelector('.ok').onclick=e=>{
+   m.querySelectorAll('.btn').forEach(b=>b.disabled=true);
+   S.cats[cat][0]+=n;S.bal-=n;S.q++;
+   let up=gain(10);toast('+10 XP');
+   const p=Math.round(S.cats[cat][0]/S.cats[cat][1]*100);
+   m.querySelector('.band').textContent='Saved';
+   hud();
+   let msg=`Saved. ${cat} is at ${p}% of its limit, and you have ${R(S.bal)} left.`;
+   if(p>=90)msg+=` That is close to the cap, so go easy on ${cat.toLowerCase()} for a few days.`;
+   if(S.q>=3&&!S.qdone){S.qdone=true;up=gain(50)||up;boom();hud();msg+=`<br><br><b>Quest complete! +50 XP.</b> Three entries logged today.`}
+   if(up)msg+=`<br><b>Level up! You are now level ${S.lvl}.</b>`;
+   say(msg,null,350)}
+ })}
+
+function afford(n){
+ const safe=S.bal-S.bills-S.min,v=n<=safe*.6?['Safe',0]:n<=safe?['Risky',1]:['Wait',1];
+ const tip=v[0]==='Safe'?'You can buy this and still cover your bills.':v[0]==='Risky'?'You can afford it, but it uses most of your safe room. Consider a cheaper option.':`This is ${R(n-safe)} over your safe limit. Postponing or saving first is safer.`;
+ say(`Here is the check for ${R(n)}.<div class="card"><h3>Affordability</h3>
+  <div class="row"><span>Balance</span><b>${R(S.bal)}</b></div>
+  <div class="row"><span>Bills still due</span><b>- ${R(S.bills)}</b></div>
+  <div class="row"><span>Minimum balance</span><b>- ${R(S.min)}</b></div>
+  <div class="row"><span>Safe to spend</span><b>${R(safe)}</b></div>
+  <span class="stamp ${v[1]?'hot':''}">${v[0]}</span></div>${tip}`)}
+
+function whatif(n){
+ const left=40000-8000,a=Math.ceil(left/2000),b=Math.ceil(left/(2000+n));
+ say(`Hypothetical only, nothing is changed.<div class="card"><h3>Laptop goal</h3>
+  <div class="row"><span>Now: ${R(2000)} a month</span><b>${a} months</b></div>
+  <div class="row"><span>If ${R(2000+n)} a month</span><b>${b} months</b></div>
+  <span class="band">${a-b} months sooner</span></div>Want me to turn this into your plan?`)}
+
+function status(){
+ const hot=Object.entries(S.cats).filter(([k,[s,l]])=>s/l>=.8).map(e=>e[0]);
+ say(`You have <b>${R(S.bal)}</b> for the next ${S.days} days.<div class="card"><h3>Budget health</h3><div class="bud">${budHTML()}</div></div>${hot.length?hot.join(' and ')+' need attention first.':'All categories look healthy.'}`)}
+
+function reply(t){
+ const n=+((t.match(/\d[\d,]*/)||[''])[0].replace(/,/g,''))||0,l=t.toLowerCase();
+ if(/afford|buy/.test(l)&&n)return afford(n);
+ if(/what ?if|save|extra/.test(l)&&n)return whatif(n);
+ if(/spent|paid|bought|spend/.test(l)&&n)return entry(t,n);
+ if(/budget|status|left|how am i|how is/.test(l))return status();
+ say('I can log an expense, check if you can afford something, or run a what-if. Try one of the buttons below.')}
+
+function send(t){t=t.trim();if(!t)return;mk('user','');chat.lastChild.querySelector('.b').textContent=t;$('#inp').value='';reply(t)}
+$('#send').onclick=()=>send($('#inp').value);
+$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter')send(e.target.value)});
+$$('.chip').forEach(c=>c.onclick=()=>send(c.dataset.t));
+
+const root=document.documentElement,tog=$('#tog');
+function theme(t){root.dataset.theme=t;tog.setAttribute('aria-checked',t==='dark');$('.tl').textContent=t==='dark'?'Dark':'Light'}
+theme(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+tog.onclick=()=>theme(root.dataset.theme==='dark'?'light':'dark');
+hud();
+say(`Hey Vinit! You have <b>${R(S.bal)}</b> for the next ${S.days} days. Food is at 80%, so watch it this week.<br>Tell me what you spent, or tap a button below.`,null,300);
+</script>
+</body>
+</html>
