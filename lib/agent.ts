@@ -1,6 +1,8 @@
 import { GoogleGenAI, FunctionDeclaration, Type } from "@google/genai";
 import * as fin from "./finance";
-import { getProfile, getStore } from "./store";
+import { getProfile } from "./store";
+import { parseFinancialInput } from "./nlp";
+import { processRuleBasedAI, AIResponse } from "./ruleEngine";
 
 const TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
@@ -74,7 +76,7 @@ function checkLevelUp(profile: any): boolean {
   return up;
 }
 
-export function executeTool(name: string, args: any, userId: string) {
+export function executeTool(name: string, args: any, userId: string): any {
   if (name === "get_balance") {
     return fin.getBalance(userId);
   }
@@ -105,127 +107,20 @@ export function executeTool(name: string, args: any, userId: string) {
   return { error: `Unknown tool: ${name}` };
 }
 
-export function offlineChat(message: string, userId: string) {
-  const profile = getProfile(userId);
-  const msgLower = message.toLowerCase();
+export async function chat(message: string, history: any[], userId: string): Promise<AIResponse> {
+  // First, run our advanced NLP parser
+  const parsed = parseFinancialInput(message);
 
-  // Extract number
-  const numMatch = message.match(/(?:₹|rs\.?|inr)?\s*(\d[\d,]*(?:\.\d+)?)/i);
-  const num = numMatch ? parseFloat(numMatch[1].replace(/,/g, "")) : 0;
-
-  let reply = "";
-  let pending: any = null;
-  const toolCalls: any[] = [];
-  let xpGained = 0;
-  let levelUp = false;
-
-  // 1. Affordability
-  if (/afford|can i buy|should i buy/.test(msgLower) && num > 0) {
-    const res = fin.checkAffordability(userId, num);
-    toolCalls.push({ tool: "check_affordability", args: { amount: num }, result: res });
-    reply = `Here is your affordability check for <b>₹${num.toLocaleString("en-IN")}</b>:<br><br>
-• Current balance: <b>₹${res.balance.toLocaleString("en-IN")}</b><br>
-• Safe to spend: <b>₹${res.safe_to_spend.toLocaleString("en-IN")}</b> (holding ₹${res.min_balance.toLocaleString("en-IN")} reserve)<br><br>
-<b>Verdict: ${res.verdict}</b> — ${res.tip}`;
-  }
-  // 2. What-if
-  else if (/what if|what-if|save more|extra/.test(msgLower)) {
-    const simAmt = num > 0 ? num : 500;
-    const res = fin.runWhatIf(userId, message, simAmt);
-    toolCalls.push({ tool: "run_whatif", args: { scenario: message, amount: simAmt }, result: res });
-    const items = res.results.map((r: any) => {
-      if (r.goal && r.months_saved !== undefined) {
-        return `• <b>${r.goal}</b>: At ₹${r.new_monthly.toLocaleString("en-IN")}/mo instead of ₹${r.current_monthly.toLocaleString("en-IN")}/mo, you hit your goal in <b>${r.months_new} months</b> (${r.months_saved} months sooner!).`;
-      }
-      return `• ${r.note}`;
-    });
-    reply = `Here is the what-if simulation for saving ₹${simAmt.toLocaleString("en-IN")} more:<br><br>${items.join("<br>")}`;
-  }
-  // 3. Log expense
-  else if (/spent|paid|bought|spend/.test(msgLower) && num > 0) {
-    let desc = message.replace(/^(i\s+)?(spent|paid|bought|spend)\s*(rs\.?|₹)?\s*[\d,]*\s*(on|for)?\s*/i, "").trim();
-    if (!desc) desc = "Expense";
-    const category = fin.categorizeFromText(desc);
-    pending = {
-      status: "pending_confirmation",
-      amount: num,
-      description: desc.slice(0, 40),
-      category,
-      type: "expense",
-    };
-    toolCalls.push({ tool: "log_expense", args: pending, result: pending });
-    profile.xp += 10;
-    xpGained += 10;
-    profile.quest_count = Math.min(profile.quest_count + 1, 3);
-    if (checkLevelUp(profile)) levelUp = true;
-    reply = `Got it! I detected <b>₹${num.toLocaleString("en-IN")}</b> for <i>${desc}</i> in <b>${category}</b>. Please confirm the entry card below:`;
-  }
-  // 4. Budget
-  else if (/budget|status|health|how am i|how is/.test(msgLower)) {
-    const bRes = fin.getBudgetStatus(userId);
-    const bal = fin.getBalance(userId);
-    toolCalls.push({ tool: "get_budget_status", args: {}, result: bRes });
-    const lines = [`You have <b>₹${bal.balance.toLocaleString("en-IN")}</b> left with <b>${bal.days_remaining} days</b> remaining this month.<br>`];
-    for (const [cat, d] of Object.entries(bRes)) {
-      lines.push(`• <b>${cat}</b>: ₹${d.spent.toLocaleString("en-IN")} / ₹${d.planned.toLocaleString("en-IN")} (${d.pct}%)`);
-    }
-    reply = lines.join("<br>");
-  }
-  // 5. Goals
-  else if (/goal|goals|save for/.test(msgLower)) {
-    const gRes = fin.getGoalsProgress(userId);
-    toolCalls.push({ tool: "get_goals", args: {}, result: gRes });
-    if (gRes.length === 0) {
-      reply = "You don't have any active savings goals yet. You can create one from the Goals tab or ask me: <i>'I want to save ₹40,000 for a laptop'</i>.";
-    } else {
-      const lines = ["Here are your active savings goals:"];
-      for (const g of gRes) {
-        lines.push(`• <b>${g.name}</b>: ₹${g.current.toLocaleString("en-IN")} / ₹${g.target.toLocaleString("en-IN")} (${g.pct}%) · ~${g.months_to_goal} months left.`);
-      }
-      reply = lines.join("<br>");
-    }
-  }
-  // 6. Insights
-  else if (/insight|insights|forecast|pattern|trend/.test(msgLower)) {
-    const ins = fin.getSpendingInsights(userId);
-    toolCalls.push({ tool: "get_spending_insights", args: {}, result: ins });
-    reply = `Here are your spending insights for ${ins.period}:<br><br>
-• Total spent so far: <b>₹${ins.total_spent.toLocaleString("en-IN")}</b><br>
-• Daily average spend: <b>₹${ins.daily_avg.toLocaleString("en-IN")}/day</b><br>
-• Projected month-end spend: <b>₹${ins.forecast_month_end.toLocaleString("en-IN")}</b><br>
-• Days remaining: <b>${ins.days_remaining} days</b>`;
-  } else {
-    reply = `I'm here to help you manage your money! You can try:<br>
-• <i>'I spent ₹150 on lunch'</i> to log an expense<br>
-• <i>'Can I afford ₹1,000?'</i> to check affordability<br>
-• <i>'What if I save ₹500 more?'</i> to simulate your goals<br>
-• <i>'How is my budget?'</i> to check category health`;
-  }
-
-  return {
-    reply,
-    pending,
-    tool_calls: toolCalls,
-    xp_gained: xpGained,
-    level_up: levelUp,
-    profile: {
-      xp: profile.xp,
-      level: profile.level,
-      streak: profile.streak,
-      quest_count: profile.quest_count,
-    },
-  };
-}
-
-export async function chat(message: string, history: any[], userId: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   const isPlaceholderKey =
     !apiKey ||
     apiKey === "YOUR_GEMINI_API_KEY_HERE" ||
     apiKey === "your_gemini_api_key_here";
 
-  if (isPlaceholderKey) {
-    return offlineChat(message, userId);
+  // If no Gemini key OR if it's an actionable domain intent (SMS, expense, math, audit),
+  // our deterministic rule engine provides exact, instant, un-hallucinated results!
+  if (isPlaceholderKey || parsed.intent !== "UNKNOWN") {
+    return processRuleBasedAI(parsed, userId, message);
   }
 
   try {
@@ -251,7 +146,10 @@ export async function chat(message: string, history: any[], userId: string) {
     });
 
     const candidate = response.candidates?.[0];
-    const functionCalls = candidate?.content?.parts?.filter((p: any) => p.functionCall)?.map((p: any) => p.functionCall) || [];
+    const functionCalls =
+      candidate?.content?.parts
+        ?.filter((p: any) => p.functionCall)
+        ?.map((p: any) => p.functionCall) || [];
 
     const profile = getProfile(userId);
     let pending: any = null;
@@ -260,7 +158,6 @@ export async function chat(message: string, history: any[], userId: string) {
     let levelUp = false;
 
     if (functionCalls.length > 0) {
-      // Execute each function call
       for (const fc of functionCalls) {
         const res: any = executeTool(fc.name, fc.args, userId);
         toolCalls.push({ tool: fc.name, args: fc.args, result: res });
@@ -274,11 +171,17 @@ export async function chat(message: string, history: any[], userId: string) {
         }
       }
 
-      // If we got a function call, return deterministic response or second turn text
-      const textParts = candidate?.content?.parts?.filter((p: any) => p.text)?.map((p: any) => p.text).join("\n") || "";
-      const reply = textParts || (pending
-        ? `Got it! I prepared the entry for <b>₹${pending.amount.toLocaleString("en-IN")}</b> (${pending.description}). Please confirm below:`
-        : `Processed your request successfully.`);
+      const textParts =
+        candidate?.content?.parts
+          ?.filter((p: any) => p.text)
+          ?.map((p: any) => p.text)
+          .join("\n") || "";
+
+      const reply =
+        textParts ||
+        (pending
+          ? `Got it! I prepared the entry for <b>₹${pending.amount.toLocaleString("en-IN")}</b> (${pending.description}). Please confirm below:`
+          : `Processed your request successfully.`);
 
       return {
         reply,
@@ -310,7 +213,7 @@ export async function chat(message: string, history: any[], userId: string) {
       },
     };
   } catch {
-    // If Gemini API fails or quota exceeded, seamlessly fall back to local engine
-    return offlineChat(message, userId);
+    // If Gemini API fails or quota exceeded, seamlessly fall back to local rule engine
+    return processRuleBasedAI(parsed, userId, message);
   }
 }

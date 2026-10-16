@@ -481,7 +481,7 @@ export default function Home() {
         {
           role: "coach",
           content:
-            "Hey Vinit! 👋 I'm your Budget Coach, powered by Gemini AI. Tell me what you spent, ask if you can afford something, or tap a chip below. What's on your mind?",
+            "Hey Vinit! 👋 I'm your Budget Coach, powered by Advanced Financial AI. Tell me what you spent, paste a bank SMS, ask if you can afford something, or tap a chip below to start!",
         },
       ]);
     }, 300);
@@ -545,7 +545,7 @@ export default function Home() {
     } catch {
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: "coach", content: "⚠️ Couldn't reach the backend. Make sure it's running on port 8000." },
+        { role: "coach", content: "⚠️ Something went wrong processing your request. Please try again." },
       ]);
     } finally {
       setLoading(false);
@@ -600,10 +600,13 @@ export default function Home() {
   const chips = [
     { label: "Log ₹150 lunch", text: "I spent ₹150 on lunch" },
     { label: "Can I afford ₹1,000?", text: "Can I afford ₹1,000?" },
-    { label: "Save ₹500 more?", text: "What if I save ₹500 more?" },
-    { label: "My budget", text: "How is my budget?" },
-    { label: "Spending insights", text: "Give me spending insights" },
-    { label: "My goals", text: "Show my savings goals" },
+    { label: "Daily safe limit", text: "How much can I spend today?" },
+    { label: "Weekend cap", text: "What is my safe weekend budget?" },
+    { label: "50/30/20 audit", text: "Analyze my budget with 50/30/20 rule" },
+    { label: "Simulate +₹500 save", text: "What if I save ₹500 more?" },
+    { label: "⚡ Test Bank SMS", text: "Sent Rs.320 from HDFC Bank A/c 1234 to SWIGGY on 16-OCT-26 UPI:42901" },
+    { label: "Emergency mode", text: "Financial emergency, help me survive" },
+    { label: "Savings tips", text: "Give me smart savings tips for Food" },
   ];
 
   const bal = profile?.balance;
