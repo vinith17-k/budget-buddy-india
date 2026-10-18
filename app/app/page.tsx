@@ -723,10 +723,17 @@ export default function Home() {
           )}
 
           {/* ── Panels ── */}
-          <div className={`panel ${activeTab === "chat" ? "active" : ""}`} ref={activeTab === "chat" ? chatRef : undefined}
-            style={{ flex: 1, overflowY: "auto" }}
-            id="chat" aria-live="polite">
-            <div className="chat" ref={activeTab === "chat" ? chatRef : undefined}>
+          <div
+            className={`panel ${activeTab === "chat" ? "active" : ""}`}
+            style={{ flex: 1, minHeight: 0, overflow: "hidden", display: activeTab === "chat" ? "flex" : "none", flexDirection: "column" }}
+            id="chat"
+            aria-live="polite"
+          >
+            <div
+              className="chat"
+              ref={chatRef}
+              style={{ flex: 1, minHeight: 0, overflowY: "auto", scrollBehavior: "smooth", paddingBottom: 8 }}
+            >
               {messages.map((msg, i) => (
                 <ChatMessage
                   key={i}
@@ -751,11 +758,26 @@ export default function Home() {
           {activeTab === "goals" && <GoalsPanel userId={userId} />}
           {activeTab === "insights" && <InsightsPanel userId={userId} />}
 
-          {/* Quick chips — only on chat tab */}
+          {/* Decluttered Quick Chips — only on chat tab */}
           {activeTab === "chat" && (
-            <div className="chips">
-              {chips.map((c) => (
-                <button key={c.label} className="chip" onClick={() => send(c.text)}>
+            <div
+              className="chips"
+              style={{
+                display: "flex",
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+                padding: "6px 2px 8px",
+                gap: 6,
+                scrollbarWidth: "none",
+              }}
+            >
+              {chips.slice(0, 5).map((c) => (
+                <button
+                  key={c.label}
+                  className="chip"
+                  onClick={() => send(c.text)}
+                  style={{ minHeight: 36, padding: "0 12px", fontSize: 11, flexShrink: 0 }}
+                >
                   {c.label}
                 </button>
               ))}
@@ -785,7 +807,7 @@ export default function Home() {
             </button>
           </div>
           <p className="foot">
-            {loading ? "Thinking…" : "Powered by Gemini AI · numbers are real, grounded in your data."}
+            {loading ? "Calculating impact…" : "Powered by Groq Llama 3.3 · zero financial hallucinations."}
           </p>
         </main>
 

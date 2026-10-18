@@ -86,13 +86,27 @@ export function extractAmount(text: string): number {
   const lMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:l|lakh|lac)\b/i);
   if (lMatch) return Math.round(parseFloat(lMatch[1]) * 100000);
 
-  // Match currency prefix/suffix: ₹, Rs, Rs., INR or raw number
-  const numMatch = text.match(/(?:(?:rs\.?|inr|₹)\s*)?(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)(?:\s*(?:rs\.?|inr|rupees|bucks))?/i);
-  if (numMatch && numMatch[1]) {
-    const cleaned = numMatch[1].replace(/,/g, "");
-    const val = parseFloat(cleaned);
+  // Currency symbol / word prefix: ₹4000, Rs. 4000, INR 4000
+  const currMatch = text.match(/(?:(?:rs\.?|inr|₹)\s*)([0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?)/i);
+  if (currMatch && currMatch[1]) {
+    const val = parseFloat(currMatch[1].replace(/,/g, ""));
     if (!isNaN(val) && val > 0) return val;
   }
+
+  // Currency suffix: 4000 rs, 4000 rupees, 4000 bucks
+  const suffMatch = text.match(/([0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?)\s*(?:rs\.?|inr|rupees|bucks)\b/i);
+  if (suffMatch && suffMatch[1]) {
+    const val = parseFloat(suffMatch[1].replace(/,/g, ""));
+    if (!isNaN(val) && val > 0) return val;
+  }
+
+  // Standalone numbers: e.g., 4000, 450.50, 10,000
+  const anyNum = text.match(/\b([0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?)\b/);
+  if (anyNum && anyNum[1]) {
+    const val = parseFloat(anyNum[1].replace(/,/g, ""));
+    if (!isNaN(val) && val > 0) return val;
+  }
+
   return 0;
 }
 
@@ -241,12 +255,15 @@ export function parseFinancialInput(message: string): ParsedInput {
     return { intent: "BUDGET_HEALTH", amount: 0, description: "", category: "", isBankSms: false };
   }
 
-  // 14. Expense Logging (Default action when spent/paid keywords or amount + noun are detected)
+  // 14. Expense Logging (Default action when spent/paid keywords, currency symbols, or bare numbers/items are provided)
   const amount = extractAmount(lower);
-  if (amount > 0 && (/spent|paid|bought|spend|had|ordered|recharge|billed|cost/.test(lower) || /₹|rs/i.test(lower))) {
+  if (amount > 0) {
     let cleanDesc = trimmed
       .replace(/^(i\s+)?(spent|paid|bought|spend|had|ordered|recharge)\s*(?:rs\.?|inr|₹)?\s*[\d,kL]*\s*(?:on|for)?\s*/i, "")
+      .replace(/(?:rs\.?|inr|₹)\s*[\d,kL]*/gi, "")
+      .replace(/\b[\d,]+\b/g, "")
       .trim();
+
     if (!cleanDesc) cleanDesc = "Expense";
     const category = resolveCategory(cleanDesc || trimmed);
 
