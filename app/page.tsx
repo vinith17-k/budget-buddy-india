@@ -1,783 +1,557 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "";
-const USER_ID = "default";
+export default function LandingPage() {
+  const router = useRouter();
+  const [testAmount, setTestAmount] = useState("12000");
+  const [testItem, setTestItem] = useState("AirPods Pro");
+  const [testSalary, setTestSalary] = useState("45000");
+  const [calculated, setCalculated] = useState<{
+    verdict: string;
+    stampClass: string;
+    runwayDays: number;
+    impactPct: number;
+    explanation: string;
+  } | null>(null);
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface ProfileData {
-  display_name: string;
-  xp: number;
-  level: number;
-  streak: number;
-  quest_count: number;
-  quest_done: boolean;
-  balance: {
-    balance: number;
-    safe_to_spend: number;
-    days_remaining: number;
-    min_balance: number;
-  };
-}
+  const runAffordabilityTest = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(testAmount) || 0;
+    const sal = Number(testSalary) || 30000;
+    const impact = Math.round((amt / sal) * 100);
+    const safeLeft = Math.max(0, sal - amt);
+    const runway = Math.max(0, Math.round((safeLeft / (sal / 30))));
 
-interface Message {
-  role: "user" | "coach";
-  content: string;
-  pending?: PendingEntry | null;
-  isTyping?: boolean;
-}
-
-interface PendingEntry {
-  amount: number;
-  description: string;
-  category: string;
-  type: string;
-}
-
-interface BudgetStatus {
-  [cat: string]: {
-    planned: number;
-    spent: number;
-    remaining: number;
-    pct: number;
-    over_budget: boolean;
-  };
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const R = (n: number) =>
-  "₹" + Math.round(n).toLocaleString("en-IN");
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function SVGFilter() {
-  return (
-    <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
-      <filter id="rough">
-        <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t" />
-        <feDisplacementMap in="SourceGraphic" in2="t" scale="3" />
-      </filter>
-    </svg>
-  );
-}
-
-function XPBar({ xp, className }: { xp: number; className?: string }) {
-  return (
-    <div className={`xp-bar ${className || ""}`}>
-      <span className="xp-fill" style={{ width: `${Math.min(xp / 5, 100)}%` }} />
-    </div>
-  );
-}
-
-function BudgetRows({ budget }: { budget: BudgetStatus }) {
-  return (
-    <>
-      {Object.entries(budget).map(([cat, d]) => (
-        <div key={cat} className={`br ${d.pct >= 90 ? "hot" : ""}`}>
-          <span>{cat}</span>
-          <i><b style={{ width: `${Math.min(d.pct, 100)}%` }} /></i>
-          <span>{d.pct}%</span>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function PassCard({ profile, budget }: { profile: ProfileData; budget: BudgetStatus }) {
-  return (
-    <section className="pass">
-      <span className="tag" style={{ position: "absolute", top: -10, right: 12 }}>a. Pass card</span>
-      <h2>{profile.display_name}</h2>
-      <div className="lvl-band">
-        <span>Level {profile.level}</span>
-        <span>🔥 {profile.streak} days</span>
-      </div>
-      <XPBar xp={profile.xp} />
-      <div className="foot" style={{ paddingTop: 4 }}>{profile.xp} / 500 XP</div>
-      <div className="row" style={{ marginTop: 8 }}>
-        <span>Left to spend</span>
-        <b>{R(profile.balance?.balance ?? 0)}</b>
-      </div>
-      <div className="row">
-        <span>Days remaining</span>
-        <b>{profile.balance?.days_remaining ?? "—"}</b>
-      </div>
-      <div className="hatched" aria-hidden />
-    </section>
-  );
-}
-
-function QuestNote({ questCount }: { questCount: number }) {
-  const done = Math.min(questCount, 3);
-  return (
-    <section className="note y">
-      <span className="pin" />
-      <div className="hand">Today&apos;s quest</div>
-      <div>Log 3 expenses ({done}/3)</div>
-      <XPBar xp={(done / 3) * 500} />
-    </section>
-  );
-}
-
-function BudgetNote({ budget }: { budget: BudgetStatus }) {
-  return (
-    <section className="note u">
-      <span className="pin" />
-      <div className="hand">Budget health</div>
-      <BudgetRows budget={budget} />
-    </section>
-  );
-}
-
-// ── Pending expense confirmation card ─────────────────────────────────────────
-function PendingCard({
-  entry,
-  onConfirm,
-  onCancel,
-}: {
-  entry: PendingEntry;
-  onConfirm: (e: PendingEntry, cat: string) => void;
-  onCancel: () => void;
-}) {
-  const CATS = ["Food", "Transport", "Fun", "Housing", "Education", "Healthcare", "Savings", "Subscriptions", "Other"];
-  const [cat, setCat] = useState(entry.category);
-  const [confirmed, setConfirmed] = useState(false);
-
-  return (
-    <div className="card">
-      <h3>Entry card</h3>
-      <div className="row"><span>Amount</span><b>{R(entry.amount)}</b></div>
-      <div className="row"><span>Note</span><b>{entry.description}</b></div>
-      <div className="row">
-        <span>Category</span>
-        <b>{cat}</b>
-      </div>
-      <span className="band">{confirmed ? "Saved ✓" : "Not saved yet"}</span>
-      {!confirmed && (
-        <div className="btns">
-          <button className="btn go" onClick={() => { setConfirmed(true); onConfirm(entry, cat); }}>
-            Confirm
-          </button>
-          <button className="btn" onClick={() => {
-            const i = CATS.indexOf(cat);
-            setCat(CATS[(i + 1) % CATS.length]);
-          }}>
-            Change category
-          </button>
-          <button className="btn" onClick={onCancel}>Cancel</button>
-        </div>
-      )}
-      <div className="hatched" aria-hidden />
-    </div>
-  );
-}
-
-// ── Chat message ──────────────────────────────────────────────────────────────
-function ChatMessage({
-  msg,
-  onConfirm,
-  onCancelPending,
-}: {
-  msg: Message;
-  onConfirm: (e: PendingEntry, cat: string) => void;
-  onCancelPending: () => void;
-}) {
-  return (
-    <div className={`msg ${msg.role}`}>
-      <div className="bubble">
-        {msg.isTyping ? (
-          <span className="typing">● ● ●</span>
-        ) : (
-          <>
-            <span dangerouslySetInnerHTML={{ __html: msg.content }} />
-            {msg.pending && (
-              <PendingCard
-                entry={msg.pending}
-                onConfirm={onConfirm}
-                onCancel={onCancelPending}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function Toast({ text, show }: { text: string; show: boolean }) {
-  return <div className={`toast ${show ? "on" : ""}`}>{text}</div>;
-}
-
-// ── Confetti ──────────────────────────────────────────────────────────────────
-function boom() {
-  const colors = ["#f0481f", "#ffe27a", "#c3d7ff", "#161616"];
-  for (let i = 0; i < 28; i++) {
-    const c = document.createElement("i");
-    c.className = "conf";
-    c.style.left = Math.random() * 100 + "vw";
-    c.style.background = colors[i % 4];
-    c.style.animationDelay = Math.random() * 0.4 + "s";
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 2200);
-  }
-}
-
-function TransactionsPanel({ userId, onUpdate }: { userId: string; onUpdate?: () => void }) {
-  const [txns, setTxns] = useState<any[]>([]);
-
-  const load = () => {
-    fetch(`${API}/api/transactions/${userId}`)
-      .then((r) => r.json())
-      .then(setTxns)
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    load();
-  }, [userId]);
-
-  const remove = async (id: number) => {
-    try {
-      await fetch(`${API}/api/transactions/${userId}?id=${id}`, { method: "DELETE" });
-      load();
-      if (onUpdate) onUpdate();
-    } catch {}
-  };
-
-  return (
-    <div className="panel active" style={{ gap: 8 }}>
-      <div className="section-title">Recent Transactions</div>
-      {txns.length === 0 && (
-        <div style={{ color: "var(--mute)", fontSize: 13 }}>No transactions yet. Chat to log one!</div>
-      )}
-      {txns.map((t) => (
-        <div key={t.id} className="txn-item">
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{t.description}</div>
-            <div className="cat">{t.category} · {t.transaction_date}</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div className={`amount ${t.type}`}>{t.type === "income" ? "+" : "-"}{R(t.amount)}</div>
-            <button
-              onClick={() => remove(t.id)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 14,
-                opacity: 0.6,
-                padding: "2px 4px",
-              }}
-              title="Delete transaction"
-            >
-              🗑️
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Budget Panel ──────────────────────────────────────────────────────────────
-function BudgetPanel({ userId }: { userId: string }) {
-  const CATS = ["Food", "Transport", "Fun", "Housing", "Education", "Healthcare", "Savings", "Subscriptions", "Other"];
-  const [budget, setBudget] = useState<BudgetStatus>({});
-  const [cat, setCat] = useState("Food");
-  const [amount, setAmount] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const load = () =>
-    fetch(`${API}/api/budget/${userId}`).then((r) => r.json()).then(setBudget).catch(() => {});
-
-  useEffect(() => { load(); }, [userId]);
-
-  const save = async () => {
-    if (!amount || isNaN(+amount)) return;
-    setSaving(true);
-    await fetch(`${API}/api/budget`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, category: cat, planned_amount: +amount }),
-    });
-    setSaving(false);
-    setAmount("");
-    load();
-  };
-
-  return (
-    <div className="panel active" style={{ gap: 10 }}>
-      <div className="section-title">Budget Planner</div>
-
-      {/* Set budget form */}
-      <div style={{ background: "var(--paper)", border: "2px solid var(--ink)", padding: 12 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13 }}>Set monthly limit</div>
-        <div className="form-row">
-          <label>Category</label>
-          <select value={cat} onChange={(e) => setCat(e.target.value)}>
-            {CATS.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="form-row">
-          <label>Amount (₹)</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 3000" />
-        </div>
-        <button className="btn go" onClick={save} disabled={saving} style={{ marginTop: 4 }}>
-          {saving ? "Saving…" : "Set Budget"}
-        </button>
-      </div>
-
-      {/* Budget status */}
-      {Object.entries(budget).map(([c, d]) => (
-        <div key={c} style={{ background: "var(--paper)", border: "2px solid var(--ink)", padding: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontWeight: 700 }}>{c}</span>
-            <span style={{ fontSize: 12, color: d.over_budget ? "var(--acc)" : "var(--mute)" }}>
-              {R(d.spent)} / {R(d.planned)}
-            </span>
-          </div>
-          <div className="progress-bar">
-            <div className="fill" style={{ width: `${Math.min(d.pct, 100)}%`, background: d.pct >= 90 ? "var(--acc)" : "var(--ink)" }} />
-          </div>
-          <div style={{ fontSize: 11, color: "var(--mute)", marginTop: 4 }}>{d.pct}% used</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Goals Panel ───────────────────────────────────────────────────────────────
-function GoalsPanel({ userId }: { userId: string }) {
-  const [goals, setGoals] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [target, setTarget] = useState("");
-  const [monthly, setMonthly] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const load = () =>
-    fetch(`${API}/api/goals/${userId}`).then((r) => r.json()).then(setGoals).catch(() => {});
-
-  useEffect(() => { load(); }, [userId]);
-
-  const save = async () => {
-    if (!name || !target) return;
-    setSaving(true);
-    await fetch(`${API}/api/goals`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: userId,
-        name,
-        target_amount: +target,
-        monthly_contribution: +monthly || 0,
-      }),
-    });
-    setSaving(false);
-    setName(""); setTarget(""); setMonthly("");
-    load();
-  };
-
-  return (
-    <div className="panel active" style={{ gap: 10 }}>
-      <div className="section-title">Savings Goals</div>
-
-      {/* New goal form */}
-      <div style={{ background: "var(--paper)", border: "2px solid var(--ink)", padding: 12 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13 }}>New Goal</div>
-        <div className="form-row"><label>Goal name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Laptop" /></div>
-        <div className="form-row"><label>Target (₹)</label>
-          <input type="number" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="e.g. 40000" /></div>
-        <div className="form-row"><label>Monthly contribution (₹)</label>
-          <input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} placeholder="e.g. 2000" /></div>
-        <button className="btn go" onClick={save} disabled={saving} style={{ marginTop: 4 }}>
-          {saving ? "Saving…" : "Create Goal"}
-        </button>
-      </div>
-
-      {goals.length === 0 && (
-        <div style={{ color: "var(--mute)", fontSize: 13 }}>No goals yet. Create one above or tell the coach!</div>
-      )}
-      {goals.map((g) => (
-        <div key={g.id} className="goal-card">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <h3>{g.name}</h3>
-            <span style={{ fontSize: 12, color: "var(--mute)" }}>{g.pct}%</span>
-          </div>
-          <div style={{ fontSize: 12, color: "var(--mute)", marginTop: 4 }}>
-            {R(g.current)} / {R(g.target)}
-            {g.months_to_goal && ` · ~${g.months_to_goal} months`}
-          </div>
-          <div className="progress-bar" style={{ marginTop: 8 }}>
-            <div className="fill" style={{ width: `${g.pct}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Insights Panel ────────────────────────────────────────────────────────────
-function InsightsPanel({ userId }: { userId: string }) {
-  const [data, setData] = useState<any>(null);
-
-  useEffect(() => {
-    fetch(`${API}/api/insights/${userId}`).then((r) => r.json()).then(setData).catch(() => {});
-  }, [userId]);
-
-  if (!data) return <div className="panel active" style={{ color: "var(--mute)", fontSize: 13 }}>Loading insights…</div>;
-
-  return (
-    <div className="panel active" style={{ gap: 10 }}>
-      <div className="section-title">Spending Insights</div>
-
-      <div style={{ background: "var(--paper)", border: "2px solid var(--ink)", padding: 12 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13 }}>{data.period} Summary</div>
-        <div className="insight-stat"><span>Total spent</span><b>{R(data.total_spent)}</b></div>
-        <div className="insight-stat"><span>Daily average</span><b>{R(data.daily_avg)}</b></div>
-        <div className="insight-stat"><span>Days elapsed</span><b>{data.days_elapsed}</b></div>
-        <div className="insight-stat"><span>Days remaining</span><b>{data.days_remaining}</b></div>
-        <div className="insight-stat" style={{ borderBottom: "none" }}>
-          <span>Month-end forecast</span>
-          <b style={{ color: "var(--acc)" }}>{R(data.forecast_month_end)}</b>
-        </div>
-      </div>
-
-      <div style={{ background: "var(--paper)", border: "2px solid var(--ink)", padding: 12 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13 }}>By Category</div>
-        {Object.entries(data.by_category as Record<string, any>).map(([cat, d]: [string, any]) => (
-          <div key={cat} className="insight-stat">
-            <span>{cat} ({d.count} txns)</span>
-            <b>{R(d.total)}</b>
-          </div>
-        ))}
-      </div>
-
-      {data.hot_categories?.length > 0 && (
-        <div style={{ background: "#ffe27a", border: "2px solid var(--ink)", padding: 10, color: "#161616" }}>
-          ⚠️ <b>{data.hot_categories.join(", ")}</b> — spending is high this month.
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main App ──────────────────────────────────────────────────────────────────
-export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [budget, setBudget] = useState<BudgetStatus>({});
-  const [toast, setToast] = useState({ text: "", show: false });
-  const [theme, setTheme] = useState("light");
-  const [activeTab, setActiveTab] = useState<"chat" | "txns" | "budget" | "goals" | "insights">("chat");
-  const chatRef = useRef<HTMLDivElement>(null);
-  const historyRef = useRef<{ role: string; content: string }[]>([]);
-
-  // ── Toast helper ──────────────────────────────────────────────────────────
-  const showToast = (text: string) => {
-    setToast({ text, show: true });
-    setTimeout(() => setToast((t) => ({ ...t, show: false })), 1800);
-  };
-
-  // ── Load profile & seed with LocalStorage persistence ──────────────────────
-  useEffect(() => {
-    // If client has stored budget data, sync it to the API
-    try {
-      const savedStore = localStorage.getItem("budget_coach_store");
-      if (savedStore) {
-        fetch(`${API}/api/sync`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: savedStore,
-        }).catch(() => {});
-      }
-    } catch {}
-
-    const loadProfile = () =>
-      fetch(`${API}/api/profile/${USER_ID}`)
-        .then((r) => r.json())
-        .then(setProfile)
-        .catch(() => {});
-
-    const loadBudget = () =>
-      fetch(`${API}/api/budget/${USER_ID}`)
-        .then((r) => r.json())
-        .then(setBudget)
-        .catch(() => {});
-
-    loadProfile();
-    loadBudget();
-
-    // Initial coach message
-    setTimeout(() => {
-      setMessages([
-        {
-          role: "coach",
-          content:
-            "Hey Vinit! 👋 I'm your Budget Coach, powered by Advanced Financial AI. Tell me what you spent, paste a bank SMS, ask if you can afford something, or tap a chip below to start!",
-        },
-      ]);
-    }, 300);
-
-    // Theme from system
-    const dark = matchMedia("(prefers-color-scheme:dark)").matches;
-    setTheme(dark ? "dark" : "light");
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [messages]);
-
-  // ── Send message ──────────────────────────────────────────────────────────
-  const send = async (text: string) => {
-    const t = text.trim();
-    if (!t || loading) return;
-    setInput("");
-
-    const userMsg: Message = { role: "user", content: t };
-    const typingMsg: Message = { role: "coach", content: "", isTyping: true };
-    setMessages((prev) => [...prev, userMsg, typingMsg]);
-    setLoading(true);
-
-    historyRef.current.push({ role: "user", content: t });
-
-    try {
-      const res = await fetch(`${API}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: t,
-          history: historyRef.current.slice(-10),
-          user_id: USER_ID,
-        }),
+    if (amt > sal * 0.4) {
+      setCalculated({
+        verdict: "FINANCIALLY RISKY",
+        stampClass: "stamp-risky",
+        runwayDays: runway,
+        impactPct: impact,
+        explanation: `Consumes ${impact}% of your monthly in-hand income. Your daily cash runway drops sharply to ${runway} days. Wait 48 hours or check your emergency fund first.`,
       });
-      const data = await res.json();
-
-      historyRef.current.push({ role: "assistant", content: data.reply });
-
-      const coachMsg: Message = {
-        role: "coach",
-        content: data.reply,
-        pending: data.pending || null,
-      };
-      setMessages((prev) => [...prev.slice(0, -1), coachMsg]);
-
-      if (data.xp_gained > 0) showToast(`+${data.xp_gained} XP`);
-      if (data.level_up) { showToast(`Level up! You're now level ${data.profile?.level} 🎉`); boom(); }
-
-      if (data.profile) {
-        setProfile((p) => p ? { ...p, ...data.profile } : p);
-      }
-
-      // Reload budget after chat
-      fetch(`${API}/api/budget/${USER_ID}`).then((r) => r.json()).then(setBudget).catch(() => {});
-    } catch {
-      setMessages((prev) => [
-        ...prev.slice(0, -1),
-        { role: "coach", content: "⚠️ Something went wrong processing your request. Please try again." },
-      ]);
-    } finally {
-      setLoading(false);
+    } else if (amt > sal * 0.15) {
+      setCalculated({
+        verdict: "CAUTION / TIGHT",
+        stampClass: "stamp-caution",
+        runwayDays: runway,
+        impactPct: impact,
+        explanation: `Takes up ${impact}% of your income. You can afford it if you compress 'Fun' and dining expenses for the next 2 weeks.`,
+      });
+    } else {
+      setCalculated({
+        verdict: "SAFE TO BUY",
+        stampClass: "stamp-safe",
+        runwayDays: runway,
+        impactPct: impact,
+        explanation: `Only ${impact}% of monthly budget. Your remaining runway of ${runway} days is healthy and well within safe limits.`,
+      });
     }
   };
 
-  // ── Confirm pending expense ───────────────────────────────────────────────
-  const confirmExpense = async (entry: PendingEntry, category: string) => {
-    try {
-      const res = await fetch(`${API}/api/confirm-expense`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: USER_ID,
-          amount: entry.amount,
-          description: entry.description,
-          category,
-        }),
-      });
-      const data = await res.json();
-      showToast("+10 XP");
-      if (data.quest_complete) { boom(); showToast("Quest complete! +50 XP 🎉"); }
-      if (data.profile) setProfile((p) => p ? { ...p, ...data.profile } : p);
-      if (data.balance) setProfile((p) => p ? { ...p, balance: data.balance } : p);
-
-      // Follow-up message from coach
-      const cat = data.category_status;
-      let followUp = `Saved! `;
-      if (cat) followUp += `${category} is at ${cat.pct}% of its limit. `;
-      if (data.balance) followUp += `You have ${R(data.balance.balance)} left this month.`;
-      setMessages((prev) => [
-        ...prev,
-        { role: "coach", content: followUp },
-      ]);
-
-      fetch(`${API}/api/budget/${USER_ID}`).then((r) => r.json()).then(setBudget).catch(() => {});
-    } catch {
-      showToast("Error saving. Try again.");
-    }
+  const handleLaunchVinit = () => {
+    localStorage.setItem("budget_user_id", "default");
+    localStorage.setItem("budget_user_name", "Vinit");
+    router.push("/app");
   };
-
-  // ── Cancel pending ────────────────────────────────────────────────────────
-  const cancelPending = () => {
-    setMessages((prev) =>
-      prev.map((m, i) =>
-        i === prev.length - 1 ? { ...m, pending: null } : m
-      )
-    );
-  };
-
-  // ── Quick chips ───────────────────────────────────────────────────────────
-  const chips = [
-    { label: "Log ₹150 lunch", text: "I spent ₹150 on lunch" },
-    { label: "Can I afford ₹1,000?", text: "Can I afford ₹1,000?" },
-    { label: "Daily safe limit", text: "How much can I spend today?" },
-    { label: "Weekend cap", text: "What is my safe weekend budget?" },
-    { label: "50/30/20 audit", text: "Analyze my budget with 50/30/20 rule" },
-    { label: "Simulate +₹500 save", text: "What if I save ₹500 more?" },
-    { label: "⚡ Test Bank SMS", text: "Sent Rs.320 from HDFC Bank A/c 1234 to SWIGGY on 16-OCT-26 UPI:42901" },
-    { label: "Emergency mode", text: "Financial emergency, help me survive" },
-    { label: "Savings tips", text: "Give me smart savings tips for Food" },
-  ];
-
-  const bal = profile?.balance;
 
   return (
-    <>
-      <SVGFilter />
-      <Toast text={toast.text} show={toast.show} />
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* ── Top Navigation Bar ── */}
+      <nav
+        style={{
+          borderBottom: "3px solid var(--ink)",
+          background: "var(--paper)",
+          padding: "16px 24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span
+            style={{
+              fontFamily: "'Archivo Black', sans-serif",
+              fontSize: 20,
+              letterSpacing: -0.5,
+              textTransform: "uppercase",
+            }}
+          >
+            BUDGET BUDDY 🇮🇳
+          </span>
+          <span
+            style={{
+              fontSize: 10,
+              background: "var(--acc)",
+              color: "#fff",
+              padding: "2px 6px",
+              fontWeight: 700,
+              letterSpacing: 1,
+            }}
+          >
+            GROQ LPU INSIDE
+          </span>
+        </div>
 
-      <div className="app">
-        {/* ── Main column ── */}
-        <main className="main">
-          {/* Header */}
-          <div className="head">
-            <h1 aria-label="Budget Coach">
-              BUDGET C<span className="dot" />ACH
-            </h1>
-            <span className="hand">just tell me what you spent</span>
-            <svg className="arrow" width="70" height="40" viewBox="0 0 70 40" fill="none"
-              stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden>
-              <path d="M4 6 C30 2 52 12 60 32" />
-              <path d="M50 28 L60 33 L63 22" />
-            </svg>
-            <button className="tog" role="switch" aria-checked={theme === "dark"}
-              aria-label="Toggle theme"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-              <span className="knob" />
-              <span>{theme === "dark" ? "Dark" : "Light"}</span>
-            </button>
-          </div>
-
-          {/* Mobile top bar */}
-          {profile && (
-            <div className="top">
-              <span className="tag">Lv {profile.level}</span>
-              <XPBar xp={profile.xp} className="xp-bar" />
-              <span>🔥 {profile.streak}</span>
-              <span className="tag">Quest {Math.min(profile.quest_count, 3)}/3</span>
-            </div>
-          )}
-
-          {/* ── Panels ── */}
-          <div className={`panel ${activeTab === "chat" ? "active" : ""}`} ref={activeTab === "chat" ? chatRef : undefined}
-            style={{ flex: 1, overflowY: "auto" }}
-            id="chat" aria-live="polite">
-            <div className="chat" ref={activeTab === "chat" ? chatRef : undefined}>
-              {messages.map((msg, i) => (
-                <ChatMessage
-                  key={i}
-                  msg={msg}
-                  onConfirm={confirmExpense}
-                  onCancelPending={cancelPending}
-                />
-              ))}
-            </div>
-          </div>
-
-          {activeTab === "txns" && (
-            <TransactionsPanel
-              userId={USER_ID}
-              onUpdate={() => {
-                fetch(`${API}/api/profile/${USER_ID}`).then((r) => r.json()).then(setProfile).catch(() => {});
-                fetch(`${API}/api/budget/${USER_ID}`).then((r) => r.json()).then(setBudget).catch(() => {});
-              }}
-            />
-          )}
-          {activeTab === "budget" && <BudgetPanel userId={USER_ID} />}
-          {activeTab === "goals" && <GoalsPanel userId={USER_ID} />}
-          {activeTab === "insights" && <InsightsPanel userId={USER_ID} />}
-
-          {/* Quick chips — only on chat tab */}
-          {activeTab === "chat" && (
-            <div className="chips">
-              {chips.map((c) => (
-                <button key={c.label} className="chip" onClick={() => send(c.text)}>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Input area */}
-          <div className="comp">
-            <input
-              id="inp"
-              type="text"
-              placeholder={activeTab === "chat" ? "Try: I spent ₹80 on chai" : "Ask the coach…"}
-              aria-label="Message your coach"
-              autoComplete="off"
-              value={input}
-              disabled={loading}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") send(input); }}
-            />
-            <button
-              className="send-btn"
-              aria-label="Send"
-              disabled={loading}
-              onClick={() => send(input)}
-            >
-              ➤
-            </button>
-          </div>
-          <p className="foot">
-            {loading ? "Thinking…" : "Powered by Gemini AI · numbers are real, grounded in your data."}
-          </p>
-        </main>
-
-        {/* ── Sidebar ── */}
-        <aside className="side">
-          {profile && <PassCard profile={profile} budget={budget} />}
-          <QuestNote questCount={profile?.quest_count ?? 0} />
-          {Object.keys(budget).length > 0 && <BudgetNote budget={budget} />}
-        </aside>
-      </div>
-
-      {/* Mobile tab bar */}
-      <nav className="tab-bar">
-        {(["chat", "txns", "budget", "goals", "insights"] as const).map((tab) => (
-          <button key={tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)}>
-            <span>{
-              tab === "chat" ? "💬" :
-              tab === "txns" ? "📋" :
-              tab === "budget" ? "📊" :
-              tab === "goals" ? "🎯" : "💡"
-            }</span>
-            <span>{
-              tab === "chat" ? "Coach" :
-              tab === "txns" ? "Txns" :
-              tab === "budget" ? "Budget" :
-              tab === "goals" ? "Goals" : "Insights"
-            }</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            onClick={handleLaunchVinit}
+            style={{
+              background: "#ffe27a",
+              color: "#161616",
+              border: "2px solid var(--ink)",
+              padding: "6px 14px",
+              fontWeight: 700,
+              fontSize: 12,
+              fontFamily: "'Space Mono', monospace",
+              cursor: "pointer",
+              boxShadow: "2px 2px 0 var(--ink)",
+            }}
+          >
+            Demo as Vinit ⚡
           </button>
-        ))}
+          <Link
+            href="/login"
+            style={{
+              background: "var(--ink)",
+              color: "#fff",
+              border: "2px solid var(--ink)",
+              padding: "6px 14px",
+              fontWeight: 700,
+              fontSize: 12,
+              textDecoration: "none",
+              fontFamily: "'Space Mono', monospace",
+              boxShadow: "2px 2px 0 var(--ink)",
+            }}
+          >
+            Sign In / Sign Up →
+          </Link>
+        </div>
       </nav>
-    </>
+
+      {/* ── Hero Section ── */}
+      <header
+        style={{
+          padding: "70px 24px 50px",
+          maxWidth: 1040,
+          margin: "0 auto",
+          width: "100%",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-block",
+            background: "#ffe27a",
+            border: "2px solid var(--ink)",
+            padding: "4px 12px",
+            fontSize: 12,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            marginBottom: 20,
+            boxShadow: "3px 3px 0 var(--ink)",
+          }}
+        >
+          Zero Financial Hallucination · Pure Mathematical Certainty
+        </div>
+
+        <h1
+          style={{
+            fontFamily: "'Archivo Black', sans-serif",
+            fontSize: "clamp(34px, 6vw, 68px)",
+            lineHeight: 1.05,
+            textTransform: "uppercase",
+            letterSpacing: -1,
+            marginBottom: 20,
+          }}
+        >
+          YOUR BRUTALLY HONEST <br />
+          <span style={{ color: "var(--acc)", textDecoration: "underline" }}>AI BUDGET COACH</span>.
+        </h1>
+
+        <p
+          style={{
+            fontSize: "clamp(15px, 2vw, 19px)",
+            color: "var(--mute)",
+            maxWidth: 720,
+            margin: "0 auto 36px",
+            lineHeight: 1.5,
+          }}
+        >
+          Built specifically for Indian salaries, credit card EMIs, and midnight Swiggy orders.
+          Ask if you can afford it <i>before</i> swiping your card.
+        </p>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+          <button
+            onClick={handleLaunchVinit}
+            style={{
+              background: "var(--acc)",
+              color: "#fff",
+              border: "3px solid var(--ink)",
+              padding: "16px 28px",
+              fontWeight: 700,
+              fontSize: 16,
+              fontFamily: "'Space Mono', monospace",
+              textTransform: "uppercase",
+              boxShadow: "6px 6px 0 var(--ink)",
+              cursor: "pointer",
+            }}
+          >
+            Launch Live Demo (Vinit) →
+          </button>
+          <Link
+            href="/login"
+            style={{
+              background: "var(--paper)",
+              color: "var(--ink)",
+              border: "3px solid var(--ink)",
+              padding: "16px 28px",
+              fontWeight: 700,
+              fontSize: 16,
+              fontFamily: "'Space Mono', monospace",
+              textTransform: "uppercase",
+              boxShadow: "6px 6px 0 var(--ink)",
+              textDecoration: "none",
+            }}
+          >
+            Create My Own Vault 🔒
+          </Link>
+        </div>
+
+        <div style={{ marginTop: 20, color: "var(--mute)", fontFamily: "'Caveat', cursive", fontSize: 20 }}>
+          ⚡ Powered by Groq LPU (Llama 3.3 70B) + Offline Fallback Engine
+        </div>
+      </header>
+
+      {/* ── Interactive Affordability Calculator Teaser ── */}
+      <section style={{ maxWidth: 900, margin: "20px auto 70px", width: "100%", padding: "0 20px" }}>
+        <div
+          style={{
+            background: "var(--paper)",
+            border: "3px solid var(--ink)",
+            boxShadow: "8px 8px 0 var(--ink)",
+            padding: "32px 28px",
+            position: "relative",
+          }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              top: -14,
+              left: 20,
+              background: "var(--ink)",
+              color: "#fff",
+              padding: "4px 10px",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+            }}
+          >
+            Interactive Sandbox · Try It Live
+          </span>
+
+          <h2
+            style={{
+              fontFamily: "'Archivo Black', sans-serif",
+              fontSize: 22,
+              textTransform: "uppercase",
+              marginBottom: 8,
+            }}
+          >
+            &quot;Can I Afford This Right Now?&quot;
+          </h2>
+          <p style={{ color: "var(--mute)", fontSize: 13, marginBottom: 20 }}>
+            Simulate a real-time impulse buy against your monthly in-hand salary:
+          </p>
+
+          <form
+            onSubmit={runAffordabilityTest}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 14,
+              marginBottom: 20,
+            }}
+          >
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                MONTHLY SALARY (₹)
+              </label>
+              <input
+                type="number"
+                value={testSalary}
+                onChange={(e) => setTestSalary(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "2px solid var(--ink)",
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 14,
+                  background: "#fff",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                ITEM DESCRIPTION
+              </label>
+              <input
+                type="text"
+                value={testItem}
+                onChange={(e) => setTestItem(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "2px solid var(--ink)",
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 14,
+                  background: "#fff",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                ITEM PRICE (₹)
+              </label>
+              <input
+                type="number"
+                value={testAmount}
+                onChange={(e) => setTestAmount(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "2px solid var(--ink)",
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 14,
+                  background: "#fff",
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button
+                type="submit"
+                style={{
+                  width: "100%",
+                  background: "var(--ink)",
+                  color: "#fff",
+                  border: "2px solid var(--ink)",
+                  padding: "12px",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  fontFamily: "'Space Mono', monospace",
+                  cursor: "pointer",
+                  textTransform: "uppercase",
+                }}
+              >
+                Audit Impact →
+              </button>
+            </div>
+          </form>
+
+          {calculated && (
+            <div
+              style={{
+                border: "2px solid var(--ink)",
+                background: calculated.stampClass === "stamp-risky" ? "#ffb4a2" : "#d8f3dc",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700, fontSize: 16 }}>
+                  VERDICT: {calculated.verdict}
+                </span>
+                <span
+                  style={{
+                    background: "var(--ink)",
+                    color: "#fff",
+                    padding: "4px 8px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {calculated.runwayDays} DAYS CASH RUNWAY
+                </span>
+              </div>
+              <p style={{ fontSize: 13, lineHeight: 1.4, color: "#161616" }}>
+                <b>Coach Breakdown:</b> {calculated.explanation}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Feature Grid ── */}
+      <section style={{ maxWidth: 1040, margin: "0 auto 80px", width: "100%", padding: "0 20px" }}>
+        <h2
+          style={{
+            fontFamily: "'Archivo Black', sans-serif",
+            fontSize: 28,
+            textTransform: "uppercase",
+            textAlign: "center",
+            marginBottom: 36,
+          }}
+        >
+          BUILT FOR REAL-WORLD INDIAN FINANCES
+        </h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+          {/* Card 1 */}
+          <div
+            style={{
+              background: "var(--paper)",
+              border: "3px solid var(--ink)",
+              boxShadow: "5px 5px 0 var(--ink)",
+              padding: 24,
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📱</div>
+            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
+              Bank SMS & UPI Auto-Parsing
+            </h3>
+            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
+              Copy-paste raw SMS alerts from HDFC, SBI, ICICI, Axis, Paytm, or PhonePe. The AI instantly extracts the
+              exact amount, merchant, and category.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div
+            style={{
+              background: "var(--paper)",
+              border: "3px solid var(--ink)",
+              boxShadow: "5px 5px 0 var(--ink)",
+              padding: 24,
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚖️</div>
+            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
+              50/30/20 & Burn Rate Audits
+            </h3>
+            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
+              Tracks your monthly Burn Rate against your next salary date. Alerts you before you cross into dangerous
+              territory with your Needs, Wants, and Savings buckets.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div
+            style={{
+              background: "var(--paper)",
+              border: "3px solid var(--ink)",
+              boxShadow: "5px 5px 0 var(--ink)",
+              padding: 24,
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🛡️</div>
+            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
+              Zero Math Hallucination
+            </h3>
+            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
+              AI models are notoriously bad at math. We use pure deterministic TypeScript algorithms for balances and
+              limits; Groq only explains and coaches.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Call to Action Banner ── */}
+      <section
+        style={{
+          background: "var(--ink)",
+          color: "#fff",
+          padding: "60px 24px",
+          textAlign: "center",
+          borderTop: "4px solid var(--acc)",
+          marginTop: "auto",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "'Archivo Black', sans-serif",
+            fontSize: "clamp(24px, 4vw, 42px)",
+            textTransform: "uppercase",
+            marginBottom: 16,
+          }}
+        >
+          STOP GUESSING YOUR BANK BALANCE.
+        </h2>
+        <p style={{ color: "#aaa", fontSize: 15, maxWidth: 600, margin: "0 auto 28px" }}>
+          Join thousands of young professionals who audit their expenses with an AI that doesn&apos;t hold back.
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", gap: 14 }}>
+          <button
+            onClick={handleLaunchVinit}
+            style={{
+              background: "#ffe27a",
+              color: "#161616",
+              border: "none",
+              padding: "14px 24px",
+              fontWeight: 700,
+              fontSize: 14,
+              fontFamily: "'Space Mono', monospace",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            Instant Demo (Vinit) ⚡
+          </button>
+          <Link
+            href="/login"
+            style={{
+              background: "var(--acc)",
+              color: "#fff",
+              border: "none",
+              padding: "14px 24px",
+              fontWeight: 700,
+              fontSize: 14,
+              fontFamily: "'Space Mono', monospace",
+              textTransform: "uppercase",
+              textDecoration: "none",
+            }}
+          >
+            Create Free Account →
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Brutalist Footer ── */}
+      <footer
+        style={{
+          background: "var(--paper)",
+          borderTop: "3px solid var(--ink)",
+          padding: "20px 24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontSize: 12,
+          color: "var(--mute)",
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
+        <div>© {new Date().getFullYear()} BUDGET BUDDY INDIA · CRAFTED WITH INK & CODE 🇮🇳</div>
+        <div style={{ display: "flex", gap: 16 }}>
+          <a
+            href="https://github.com/vinith17-k/budget-buddy-india"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--ink)", fontWeight: 700, textDecoration: "none" }}
+          >
+            GitHub Repo ↗
+          </a>
+          <span style={{ color: "var(--acc)", fontWeight: 700 }}>Groq llama-3.3-70b-versatile Active</span>
+        </div>
+      </footer>
+    </div>
   );
 }
