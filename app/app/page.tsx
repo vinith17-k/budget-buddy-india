@@ -89,8 +89,8 @@ function PassCard({ profile, budget }: { profile: ProfileData; budget: BudgetSta
       <span className="tag" style={{ position: "absolute", top: -10, right: 12 }}>a. Pass card</span>
       <h2>{profile.display_name}</h2>
       <div className="lvl-band">
-        <span>Level {profile.level}</span>
-        <span>🔥 {profile.streak} days</span>
+        <span>LEVEL {profile.level}</span>
+        <span>STREAK: {profile.streak}D</span>
       </div>
       <XPBar xp={profile.xp} />
       <div className="foot" style={{ paddingTop: 4 }}>{profile.xp} / 500 XP</div>
@@ -100,7 +100,7 @@ function PassCard({ profile, budget }: { profile: ProfileData; budget: BudgetSta
       </div>
       <div className="row">
         <span>Days remaining</span>
-        <b>{profile.balance?.days_remaining ?? "—"}</b>
+        <b>{profile.balance?.days_remaining ?? "N/A"}</b>
       </div>
       <div className="hatched" aria-hidden />
     </section>
@@ -186,7 +186,14 @@ function ChatMessage({
     <div className={`msg ${msg.role}`}>
       <div className="bubble">
         {msg.isTyping ? (
-          <span className="typing">● ● ●</span>
+          <div className="skeleton-tape" aria-label="Calculating financial runway">
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--mute)" }}>
+              [CALCULATING RUNWAY...]
+            </span>
+            <div className="skeleton-line" />
+            <div className="skeleton-line mid" />
+            <div className="skeleton-line short" />
+          </div>
         ) : (
           <>
             <span dangerouslySetInnerHTML={{ __html: msg.content }} />
@@ -715,10 +722,10 @@ export default function Home() {
           {/* Mobile top bar */}
           {profile && (
             <div className="top">
-              <span className="tag">Lv {profile.level}</span>
+              <span className="tag">LV {profile.level}</span>
               <XPBar xp={profile.xp} className="xp-bar" />
-              <span>🔥 {profile.streak}</span>
-              <span className="tag">Quest {Math.min(profile.quest_count, 3)}/3</span>
+              <span className="tag">STREAK: {profile.streak}D</span>
+              <span className="tag">QUEST {Math.min(profile.quest_count, 3)}/3</span>
             </div>
           )}
 

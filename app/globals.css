@@ -118,18 +118,28 @@ h1 { font: 400 clamp(30px,6vw,52px)/1 'Rubik Dirt','Archivo Black',Impact,sans-s
 .stamp { display: inline-block; border: 3px solid var(--ink); font: 400 18px 'Archivo Black',sans-serif; padding: 0 10px; transform: rotate(-6deg); margin-top: 8px; }
 .stamp.hot { border-color: var(--acc); color: var(--acc); }
 
-/* Buttons */
+/* Buttons with tactile mechanical clicks */
 .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-button { font: 700 13px 'Space Mono',monospace; color: var(--ink); cursor: pointer; }
-.btn { min-height: 46px; padding: 0 18px; border: 2px solid var(--ink); background: var(--paper); }
+button { font: 700 13px 'Space Mono',monospace; color: var(--ink); cursor: pointer; transition: transform 0.05s, box-shadow 0.05s; }
+.btn { min-height: 46px; padding: 0 18px; border: 2px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
 .btn.go { background: var(--acc); color: #161616; }
+.btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 button:focus-visible, input:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
 
 /* Quick chips */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 0 10px; }
-.chip { min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--paper); border-radius: 999px; }
-.chip:hover, .btn:hover:not(:disabled) { background: var(--acc); color: #161616; }
+.chip { min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--paper); border-radius: 999px; box-shadow: 2px 2px 0 var(--ink); }
+.chip:hover:not(:disabled) { background: var(--acc); color: #161616; }
+.chip:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+
+/* Paper Stamped Skeleton Loader */
+.skeleton-tape { display: flex; flex-direction: column; gap: 8px; width: 220px; padding: 6px 0; }
+.skeleton-line { height: 10px; background: repeating-linear-gradient(90deg, var(--mute) 0 4px, transparent 4px 8px); opacity: 0.4; animation: tapeShift 1.2s infinite linear; }
+.skeleton-line.short { width: 60%; }
+.skeleton-line.mid { width: 85%; }
+@keyframes tapeShift { from { background-position: 0 0; } to { background-position: 24px 0; } }
+
 
 /* Input area */
 .comp { display: flex; gap: 8px; }

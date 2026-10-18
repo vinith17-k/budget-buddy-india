@@ -9,6 +9,7 @@ export default function LandingPage() {
   const [testItem, setTestItem] = useState("AirPods Pro");
   const [testSalary, setTestSalary] = useState("45000");
   const [theme, setTheme] = useState("light");
+  const [activeModal, setActiveModal] = useState<"privacy" | "terms" | null>(null);
   const [calculated, setCalculated] = useState<{
     verdict: string;
     stampClass: string;
@@ -66,7 +67,7 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* SVG Rough Filter for signature brutalist edges */}
+      {/* SVG Rough Filter */}
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
         <filter id="rough">
           <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t" />
@@ -75,7 +76,7 @@ export default function LandingPage() {
       </svg>
 
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        {/* ── Top Header / Navbar matching app style ── */}
+        {/* ── Top Header ── */}
         <header
           style={{
             maxWidth: 1080,
@@ -105,12 +106,11 @@ export default function LandingPage() {
                 padding: "0 14px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 6,
                 fontWeight: 700,
                 fontSize: 12,
               }}
             >
-              Demo as Vinit ⚡
+              [DEMO: VINIT]
             </button>
 
             <Link
@@ -147,15 +147,15 @@ export default function LandingPage() {
         <section
           style={{
             maxWidth: 1080,
-            margin: "20px auto 40px",
+            margin: "20px auto 36px",
             width: "100%",
             padding: "0 20px",
             textAlign: "center",
           }}
         >
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-            <span className="tag" style={{ fontSize: 12, padding: "2px 8px" }}>
-              ZERO HALLUCINATIONS · DETERMINISTIC FINANCIAL MATH
+            <span className="tag" style={{ fontSize: 11, padding: "2px 8px" }}>
+              ZERO HALLUCINATIONS · DETERMINISTIC RUNWAY ENGINE
             </span>
           </div>
 
@@ -189,7 +189,7 @@ export default function LandingPage() {
             <button
               onClick={handleLaunchVinit}
               className="btn go"
-              style={{ minHeight: 48, padding: "0 24px", fontSize: 15 }}
+              style={{ minHeight: 48, padding: "0 24px", fontSize: 14 }}
             >
               Launch Live App as Vinit →
             </button>
@@ -199,19 +199,19 @@ export default function LandingPage() {
               style={{
                 minHeight: 48,
                 padding: "0 24px",
-                fontSize: 15,
+                fontSize: 14,
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 color: "var(--ink)",
               }}
             >
-              New User Sign In 🔒
+              Create Clean Vault
             </Link>
           </div>
         </section>
 
-        {/* ── Main Content Area: Interactive Sandbox & Notes ── */}
+        {/* ── Main Content Area ── */}
         <main
           style={{
             maxWidth: 1080,
@@ -293,9 +293,9 @@ export default function LandingPage() {
             {/* Yellow Sticky Note: Bank SMS Parser */}
             <div className="note y">
               <span className="pin" />
-              <div className="hand">SMS & UPI Auto-Parse</div>
+              <div className="hand">SMS & UPI Protocol</div>
               <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
-                Paste raw SMS alerts directly into the chat:
+                Paste raw SMS alerts directly into the coach:
               </div>
               <div
                 style={{
@@ -310,25 +310,25 @@ export default function LandingPage() {
                 &ldquo;Sent Rs.450 from HDFC Bank to SWIGGY on 18-OCT-26 UPI:9421&rdquo;
               </div>
               <div style={{ fontSize: 12, marginTop: 8, fontWeight: 700 }}>
-                ⚡ Auto-resolves amount, vendor & category with 100+ merchant keywords.
+                [PARSED] Amount: ₹450 · Vendor: Swiggy · Cat: Food
               </div>
             </div>
 
             {/* Blue Sticky Note: Zero Hallucination Guarantee */}
             <div className="note u">
               <span className="pin" />
-              <div className="hand">Zero Financial Hallucination</div>
+              <div className="hand">Zero Hallucinations</div>
               <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
-                Most AI coaches guess math. Budget Coach uses pure TypeScript logic for 50/30/20 budgets, daily burn rate, and savings runway.
+                Most AI coaches guess math. Budget Coach uses pure TypeScript algorithms for 50/30/20 budgets, daily burn rate, and savings runway.
               </div>
               <div className="band" style={{ marginTop: 10 }}>
-                Hard math verified · Groq LPU Explains
+                HARD MATH VERIFIED · GROQ LPU EXPLAINS
               </div>
             </div>
           </div>
         </main>
 
-        {/* ── Brutalist Footer ── */}
+        {/* ── Brutalist Footer with TOS & Privacy Policy ── */}
         <footer
           style={{
             borderTop: "2px solid var(--ink)",
@@ -350,13 +350,119 @@ export default function LandingPage() {
               color: "var(--mute)",
             }}
           >
-            <div>BUDGET COACH · PERSONAL EXPENSE AUDITOR 🇮🇳</div>
+            <div>BUDGET COACH · PERSONAL EXPENSE AUDITOR</div>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span className="tag">Level 4 Safe</span>
-              <span>Groq Llama 3.3 Active</span>
+              <button
+                type="button"
+                onClick={() => setActiveModal("privacy")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 12,
+                  color: "var(--ink)",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+              >
+                Privacy Policy
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => setActiveModal("terms")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 12,
+                  color: "var(--ink)",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+              >
+                Terms of Service
+              </button>
+              <span className="tag">GROQ LLAMA 3.3 READY</span>
             </div>
           </div>
         </footer>
+
+        {/* ── Real TOS / Privacy Modals ── */}
+        {activeModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+              zIndex: 100,
+            }}
+            onClick={() => setActiveModal(null)}
+          >
+            <div
+              className="pass"
+              style={{
+                maxWidth: 520,
+                width: "100%",
+                background: "var(--paper)",
+                padding: 24,
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ fontSize: 18, fontFamily: "'Archivo Black', sans-serif" }}>
+                  {activeModal === "privacy" ? "PRIVACY POLICY" : "TERMS OF SERVICE"}
+                </h3>
+                <button
+                  onClick={() => setActiveModal(null)}
+                  style={{
+                    background: "var(--ink)",
+                    color: "#fff",
+                    border: "none",
+                    padding: "4px 8px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕ CLOSE
+                </button>
+              </div>
+
+              {activeModal === "privacy" ? (
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "var(--ink)" }}>
+                  <p style={{ marginBottom: 10 }}>
+                    <b>1. Local-First Storage:</b> All personal transactions, budget targets, and goals are stored in your device&apos;s local browser storage. We do not maintain an external database of your financial records.
+                  </p>
+                  <p style={{ marginBottom: 10 }}>
+                    <b>2. Zero Third-Party Trackers:</b> We run zero advertising networks, tracking pixels, or cross-site fingerprinting scripts.
+                  </p>
+                  <p>
+                    <b>3. Ephemeral AI Inference:</b> Queries sent to the AI coach are processed strictly for calculating financial explanations and discarded after the response is rendered.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "var(--ink)" }}>
+                  <p style={{ marginBottom: 10 }}>
+                    <b>1. Educational Tool:</b> Budget Coach provides automated computational budgeting, burn rate estimation, and affordability indicators. It does not constitute certified legal, tax, or investment advice.
+                  </p>
+                  <p style={{ marginBottom: 10 }}>
+                    <b>2. Deterministic Execution:</b> Math calculations (safe to spend, days remaining, 50/30/20 splits) are strictly deterministic algorithms executed in code.
+                  </p>
+                  <p>
+                    <b>3. User Discretion:</b> You are solely responsible for final purchasing decisions, bank credentials, and actual transaction authorizations.
+                  </p>
+                </div>
+              )}
+
+              <div className="hatched" style={{ marginTop: 16 }} />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
