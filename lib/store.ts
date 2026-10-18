@@ -5,8 +5,7 @@ function currentPeriod() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// Global in-memory storage suitable for serverless execution
-interface StoreData {
+export interface StoreData {
   profiles: Record<string, Profile>;
   transactions: Transaction[];
   budgets: Budget[];
@@ -19,7 +18,7 @@ declare global {
   var __BUDGET_STORE__: StoreData | undefined;
 }
 
-function initStore(): StoreData {
+export function initStore(): StoreData {
   const period = currentPeriod();
   const store: StoreData = {
     profiles: {
@@ -166,13 +165,20 @@ export function getStore(): StoreData {
   return global.__BUDGET_STORE__;
 }
 
+export function syncStore(clientStore: StoreData) {
+  if (clientStore && clientStore.profiles) {
+    global.__BUDGET_STORE__ = clientStore;
+  }
+  return getStore();
+}
+
 export function getProfile(userId: string): Profile {
   const store = getStore();
   if (!store.profiles[userId]) {
     store.profiles[userId] = {
       user_id: userId,
-      display_name: "User",
-      monthly_income: 20000,
+      display_name: "Vinit",
+      monthly_income: 25000,
       income_day: 1,
       min_balance: 500,
       xp: 0,

@@ -223,16 +223,27 @@ function boom() {
   }
 }
 
-// ── Transactions Panel ────────────────────────────────────────────────────────
-function TransactionsPanel({ userId }: { userId: string }) {
+function TransactionsPanel({ userId, onUpdate }: { userId: string; onUpdate?: () => void }) {
   const [txns, setTxns] = useState<any[]>([]);
 
-  useEffect(() => {
+  const load = () => {
     fetch(`${API}/api/transactions/${userId}`)
       .then((r) => r.json())
       .then(setTxns)
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    load();
   }, [userId]);
+
+  const remove = async (id: number) => {
+    try {
+      await fetch(`${API}/api/transactions/${userId}?id=${id}`, { method: "DELETE" });
+      load();
+      if (onUpdate) onUpdate();
+    } catch {}
+  };
 
   return (
     <div className="panel active" style={{ gap: 8 }}>
@@ -246,7 +257,23 @@ function TransactionsPanel({ userId }: { userId: string }) {
             <div style={{ fontWeight: 700, fontSize: 13 }}>{t.description}</div>
             <div className="cat">{t.category} · {t.transaction_date}</div>
           </div>
-          <div className={`amount ${t.type}`}>{t.type === "income" ? "+" : "-"}{R(t.amount)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className={`amount ${t.type}`}>{t.type === "income" ? "+" : "-"}{R(t.amount)}</div>
+            <button
+              onClick={() => remove(t.id)}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 14,
+                opacity: 0.6,
+                padding: "2px 4px",
+              }}
+              title="Delete transaction"
+            >
+              🗑️
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -455,10 +482,19 @@ export default function Home() {
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 1800);
   };
 
-  // ── Load profile & seed ───────────────────────────────────────────────────
+  // ── Load profile & seed with LocalStorage persistence ──────────────────────
   useEffect(() => {
-    // Seed demo data
-    fetch(`${API}/api/seed/${USER_ID}`, { method: "POST" }).catch(() => {});
+    // If client has stored budget data, sync it to the API
+    try {
+      const savedStore = localStorage.getItem("budget_coach_store");
+      if (savedStore) {
+        fetch(`${API}/api/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: savedStore,
+        }).catch(() => {});
+      }
+    } catch {}
 
     const loadProfile = () =>
       fetch(`${API}/api/profile/${USER_ID}`)
@@ -664,7 +700,15 @@ export default function Home() {
             </div>
           </div>
 
-          {activeTab === "txns" && <TransactionsPanel userId={USER_ID} />}
+          {activeTab === "txns" && (
+            <TransactionsPanel
+              userId={USER_ID}
+              onUpdate={() => {
+                fetch(`${API}/api/profile/${USER_ID}`).then((r) => r.json()).then(setProfile).catch(() => {});
+                fetch(`${API}/api/budget/${USER_ID}`).then((r) => r.json()).then(setBudget).catch(() => {});
+              }}
+            />
+          )}
           {activeTab === "budget" && <BudgetPanel userId={USER_ID} />}
           {activeTab === "goals" && <GoalsPanel userId={USER_ID} />}
           {activeTab === "insights" && <InsightsPanel userId={USER_ID} />}
