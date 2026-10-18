@@ -8,6 +8,7 @@ export default function LandingPage() {
   const [testAmount, setTestAmount] = useState("12000");
   const [testItem, setTestItem] = useState("AirPods Pro");
   const [testSalary, setTestSalary] = useState("45000");
+  const [theme, setTheme] = useState("light");
   const [calculated, setCalculated] = useState<{
     verdict: string;
     stampClass: string;
@@ -16,18 +17,24 @@ export default function LandingPage() {
     explanation: string;
   } | null>(null);
 
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+  };
+
   const runAffordabilityTest = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = Number(testAmount) || 0;
     const sal = Number(testSalary) || 30000;
     const impact = Math.round((amt / sal) * 100);
     const safeLeft = Math.max(0, sal - amt);
-    const runway = Math.max(0, Math.round((safeLeft / (sal / 30))));
+    const runway = Math.max(0, Math.round(safeLeft / (sal / 30)));
 
     if (amt > sal * 0.4) {
       setCalculated({
         verdict: "FINANCIALLY RISKY",
-        stampClass: "stamp-risky",
+        stampClass: "stamp hot",
         runwayDays: runway,
         impactPct: impact,
         explanation: `Consumes ${impact}% of your monthly in-hand income. Your daily cash runway drops sharply to ${runway} days. Wait 48 hours or check your emergency fund first.`,
@@ -35,7 +42,7 @@ export default function LandingPage() {
     } else if (amt > sal * 0.15) {
       setCalculated({
         verdict: "CAUTION / TIGHT",
-        stampClass: "stamp-caution",
+        stampClass: "stamp",
         runwayDays: runway,
         impactPct: impact,
         explanation: `Takes up ${impact}% of your income. You can afford it if you compress 'Fun' and dining expenses for the next 2 weeks.`,
@@ -43,7 +50,7 @@ export default function LandingPage() {
     } else {
       setCalculated({
         verdict: "SAFE TO BUY",
-        stampClass: "stamp-safe",
+        stampClass: "stamp",
         runwayDays: runway,
         impactPct: impact,
         explanation: `Only ${impact}% of monthly budget. Your remaining runway of ${runway} days is healthy and well within safe limits.`,
@@ -58,500 +65,299 @@ export default function LandingPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* ── Top Navigation Bar ── */}
-      <nav
-        style={{
-          borderBottom: "3px solid var(--ink)",
-          background: "var(--paper)",
-          padding: "16px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span
-            style={{
-              fontFamily: "'Archivo Black', sans-serif",
-              fontSize: 20,
-              letterSpacing: -0.5,
-              textTransform: "uppercase",
-            }}
-          >
-            BUDGET BUDDY 🇮🇳
-          </span>
-          <span
-            style={{
-              fontSize: 10,
-              background: "var(--acc)",
-              color: "#fff",
-              padding: "2px 6px",
-              fontWeight: 700,
-              letterSpacing: 1,
-            }}
-          >
-            GROQ LPU INSIDE
-          </span>
-        </div>
+    <>
+      {/* SVG Rough Filter for signature brutalist edges */}
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+        <filter id="rough">
+          <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t" />
+          <feDisplacementMap in="SourceGraphic" in2="t" scale="3" />
+        </filter>
+      </svg>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button
-            onClick={handleLaunchVinit}
-            style={{
-              background: "#ffe27a",
-              color: "#161616",
-              border: "2px solid var(--ink)",
-              padding: "6px 14px",
-              fontWeight: 700,
-              fontSize: 12,
-              fontFamily: "'Space Mono', monospace",
-              cursor: "pointer",
-              boxShadow: "2px 2px 0 var(--ink)",
-            }}
-          >
-            Demo as Vinit ⚡
-          </button>
-          <Link
-            href="/login"
-            style={{
-              background: "var(--ink)",
-              color: "#fff",
-              border: "2px solid var(--ink)",
-              padding: "6px 14px",
-              fontWeight: 700,
-              fontSize: 12,
-              textDecoration: "none",
-              fontFamily: "'Space Mono', monospace",
-              boxShadow: "2px 2px 0 var(--ink)",
-            }}
-          >
-            Sign In / Sign Up →
-          </Link>
-        </div>
-      </nav>
-
-      {/* ── Hero Section ── */}
-      <header
-        style={{
-          padding: "70px 24px 50px",
-          maxWidth: 1040,
-          margin: "0 auto",
-          width: "100%",
-          textAlign: "center",
-        }}
-      >
-        <div
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        {/* ── Top Header / Navbar matching app style ── */}
+        <header
           style={{
-            display: "inline-block",
-            background: "#ffe27a",
-            border: "2px solid var(--ink)",
-            padding: "4px 12px",
-            fontSize: 12,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            marginBottom: 20,
-            boxShadow: "3px 3px 0 var(--ink)",
+            maxWidth: 1080,
+            margin: "0 auto",
+            width: "100%",
+            padding: "16px 20px 8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
           }}
         >
-          Zero Financial Hallucination · Pure Mathematical Certainty
-        </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+            <h1 aria-label="Budget Coach" style={{ fontSize: "clamp(26px, 4vw, 42px)", margin: 0 }}>
+              BUDGET C<span className="dot" />ACH
+            </h1>
+            <span className="hand" style={{ fontSize: 18 }}>india&apos;s ai expense auditor</span>
+          </div>
 
-        <h1
-          style={{
-            fontFamily: "'Archivo Black', sans-serif",
-            fontSize: "clamp(34px, 6vw, 68px)",
-            lineHeight: 1.05,
-            textTransform: "uppercase",
-            letterSpacing: -1,
-            marginBottom: 20,
-          }}
-        >
-          YOUR BRUTALLY HONEST <br />
-          <span style={{ color: "var(--acc)", textDecoration: "underline" }}>AI BUDGET COACH</span>.
-        </h1>
-
-        <p
-          style={{
-            fontSize: "clamp(15px, 2vw, 19px)",
-            color: "var(--mute)",
-            maxWidth: 720,
-            margin: "0 auto 36px",
-            lineHeight: 1.5,
-          }}
-        >
-          Built specifically for Indian salaries, credit card EMIs, and midnight Swiggy orders.
-          Ask if you can afford it <i>before</i> swiping your card.
-        </p>
-
-        <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-          <button
-            onClick={handleLaunchVinit}
-            style={{
-              background: "var(--acc)",
-              color: "#fff",
-              border: "3px solid var(--ink)",
-              padding: "16px 28px",
-              fontWeight: 700,
-              fontSize: 16,
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              boxShadow: "6px 6px 0 var(--ink)",
-              cursor: "pointer",
-            }}
-          >
-            Launch Live Demo (Vinit) →
-          </button>
-          <Link
-            href="/login"
-            style={{
-              background: "var(--paper)",
-              color: "var(--ink)",
-              border: "3px solid var(--ink)",
-              padding: "16px 28px",
-              fontWeight: 700,
-              fontSize: 16,
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              boxShadow: "6px 6px 0 var(--ink)",
-              textDecoration: "none",
-            }}
-          >
-            Create My Own Vault 🔒
-          </Link>
-        </div>
-
-        <div style={{ marginTop: 20, color: "var(--mute)", fontFamily: "'Caveat', cursive", fontSize: 20 }}>
-          ⚡ Powered by Groq LPU (Llama 3.3 70B) + Offline Fallback Engine
-        </div>
-      </header>
-
-      {/* ── Interactive Affordability Calculator Teaser ── */}
-      <section style={{ maxWidth: 900, margin: "20px auto 70px", width: "100%", padding: "0 20px" }}>
-        <div
-          style={{
-            background: "var(--paper)",
-            border: "3px solid var(--ink)",
-            boxShadow: "8px 8px 0 var(--ink)",
-            padding: "32px 28px",
-            position: "relative",
-          }}
-        >
-          <span
-            style={{
-              position: "absolute",
-              top: -14,
-              left: 20,
-              background: "var(--ink)",
-              color: "#fff",
-              padding: "4px 10px",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            Interactive Sandbox · Try It Live
-          </span>
-
-          <h2
-            style={{
-              fontFamily: "'Archivo Black', sans-serif",
-              fontSize: 22,
-              textTransform: "uppercase",
-              marginBottom: 8,
-            }}
-          >
-            &quot;Can I Afford This Right Now?&quot;
-          </h2>
-          <p style={{ color: "var(--mute)", fontSize: 13, marginBottom: 20 }}>
-            Simulate a real-time impulse buy against your monthly in-hand salary:
-          </p>
-
-          <form
-            onSubmit={runAffordabilityTest}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 14,
-              marginBottom: 20,
-            }}
-          >
-            <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                MONTHLY SALARY (₹)
-              </label>
-              <input
-                type="number"
-                value={testSalary}
-                onChange={(e) => setTestSalary(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid var(--ink)",
-                  fontFamily: "'Space Mono', monospace",
-                  fontSize: 14,
-                  background: "#fff",
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                ITEM DESCRIPTION
-              </label>
-              <input
-                type="text"
-                value={testItem}
-                onChange={(e) => setTestItem(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid var(--ink)",
-                  fontFamily: "'Space Mono', monospace",
-                  fontSize: 14,
-                  background: "#fff",
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                ITEM PRICE (₹)
-              </label>
-              <input
-                type="number"
-                value={testAmount}
-                onChange={(e) => setTestAmount(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "2px solid var(--ink)",
-                  fontFamily: "'Space Mono', monospace",
-                  fontSize: 14,
-                  background: "#fff",
-                }}
-              />
-            </div>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <button
-                type="submit"
-                style={{
-                  width: "100%",
-                  background: "var(--ink)",
-                  color: "#fff",
-                  border: "2px solid var(--ink)",
-                  padding: "12px",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  fontFamily: "'Space Mono', monospace",
-                  cursor: "pointer",
-                  textTransform: "uppercase",
-                }}
-              >
-                Audit Impact →
-              </button>
-            </div>
-          </form>
-
-          {calculated && (
-            <div
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={handleLaunchVinit}
+              className="btn go"
               style={{
-                border: "2px solid var(--ink)",
-                background: calculated.stampClass === "stamp-risky" ? "#ffb4a2" : "#d8f3dc",
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
+                minHeight: 40,
+                padding: "0 14px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontWeight: 700,
+                fontSize: 12,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontWeight: 700, fontSize: 16 }}>
-                  VERDICT: {calculated.verdict}
-                </span>
-                <span
-                  style={{
-                    background: "var(--ink)",
-                    color: "#fff",
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  {calculated.runwayDays} DAYS CASH RUNWAY
-                </span>
-              </div>
-              <p style={{ fontSize: 13, lineHeight: 1.4, color: "#161616" }}>
-                <b>Coach Breakdown:</b> {calculated.explanation}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+              Demo as Vinit ⚡
+            </button>
 
-      {/* ── Feature Grid ── */}
-      <section style={{ maxWidth: 1040, margin: "0 auto 80px", width: "100%", padding: "0 20px" }}>
-        <h2
+            <Link
+              href="/login"
+              className="btn"
+              style={{
+                minHeight: 40,
+                padding: "0 14px",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: 12,
+                color: "var(--ink)",
+              }}
+            >
+              Sign In →
+            </Link>
+
+            <button
+              className="tog"
+              role="switch"
+              aria-checked={theme === "dark"}
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+            >
+              <span className="knob" />
+              <span>{theme === "dark" ? "Dark" : "Light"}</span>
+            </button>
+          </div>
+        </header>
+
+        {/* ── Hero Section ── */}
+        <section
           style={{
-            fontFamily: "'Archivo Black', sans-serif",
-            fontSize: 28,
-            textTransform: "uppercase",
+            maxWidth: 1080,
+            margin: "20px auto 40px",
+            width: "100%",
+            padding: "0 20px",
             textAlign: "center",
-            marginBottom: 36,
           }}
         >
-          BUILT FOR REAL-WORLD INDIAN FINANCES
-        </h2>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
-          {/* Card 1 */}
-          <div
-            style={{
-              background: "var(--paper)",
-              border: "3px solid var(--ink)",
-              boxShadow: "5px 5px 0 var(--ink)",
-              padding: 24,
-            }}
-          >
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📱</div>
-            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
-              Bank SMS & UPI Auto-Parsing
-            </h3>
-            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
-              Copy-paste raw SMS alerts from HDFC, SBI, ICICI, Axis, Paytm, or PhonePe. The AI instantly extracts the
-              exact amount, merchant, and category.
-            </p>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+            <span className="tag" style={{ fontSize: 12, padding: "2px 8px" }}>
+              ZERO HALLUCINATIONS · DETERMINISTIC FINANCIAL MATH
+            </span>
           </div>
 
-          {/* Card 2 */}
-          <div
+          <h1
             style={{
-              background: "var(--paper)",
-              border: "3px solid var(--ink)",
-              boxShadow: "5px 5px 0 var(--ink)",
-              padding: 24,
+              fontSize: "clamp(34px, 6vw, 68px)",
+              lineHeight: 1.05,
+              textTransform: "uppercase",
+              margin: "0 auto 18px",
+              maxWidth: 900,
             }}
           >
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⚖️</div>
-            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
-              50/30/20 & Burn Rate Audits
-            </h3>
-            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
-              Tracks your monthly Burn Rate against your next salary date. Alerts you before you cross into dangerous
-              territory with your Needs, Wants, and Savings buckets.
-            </p>
-          </div>
+            JUST TELL ME <br />
+            WHAT YOU <span style={{ color: "var(--acc)" }}>SPENT</span>.
+          </h1>
 
-          {/* Card 3 */}
-          <div
+          <p
             style={{
-              background: "var(--paper)",
-              border: "3px solid var(--ink)",
-              boxShadow: "5px 5px 0 var(--ink)",
-              padding: 24,
+              fontSize: "clamp(14px, 2vw, 17px)",
+              color: "var(--mute)",
+              maxWidth: 640,
+              margin: "0 auto 28px",
+              lineHeight: 1.6,
             }}
           >
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🛡️</div>
-            <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 8 }}>
-              Zero Math Hallucination
-            </h3>
-            <p style={{ color: "var(--mute)", fontSize: 13, lineHeight: 1.5 }}>
-              AI models are notoriously bad at math. We use pure deterministic TypeScript algorithms for balances and
-              limits; Groq only explains and coaches.
-            </p>
-          </div>
-        </div>
-      </section>
+            Built for Indian UPI habits, salary cycles, and impulse purchases.
+            Paste raw bank SMS alerts, simulate what-if scenarios, and get stamped verdicts before you swipe.
+          </p>
 
-      {/* ── Call to Action Banner ── */}
-      <section
-        style={{
-          background: "var(--ink)",
-          color: "#fff",
-          padding: "60px 24px",
-          textAlign: "center",
-          borderTop: "4px solid var(--acc)",
-          marginTop: "auto",
-        }}
-      >
-        <h2
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={handleLaunchVinit}
+              className="btn go"
+              style={{ minHeight: 48, padding: "0 24px", fontSize: 15 }}
+            >
+              Launch Live App as Vinit →
+            </button>
+            <Link
+              href="/login"
+              className="btn"
+              style={{
+                minHeight: 48,
+                padding: "0 24px",
+                fontSize: 15,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                color: "var(--ink)",
+              }}
+            >
+              New User Sign In 🔒
+            </Link>
+          </div>
+        </section>
+
+        {/* ── Main Content Area: Interactive Sandbox & Notes ── */}
+        <main
           style={{
-            fontFamily: "'Archivo Black', sans-serif",
-            fontSize: "clamp(24px, 4vw, 42px)",
-            textTransform: "uppercase",
-            marginBottom: 16,
+            maxWidth: 1080,
+            margin: "0 auto 60px",
+            width: "100%",
+            padding: "0 20px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: 26,
+            alignItems: "start",
           }}
         >
-          STOP GUESSING YOUR BANK BALANCE.
-        </h2>
-        <p style={{ color: "#aaa", fontSize: 15, maxWidth: 600, margin: "0 auto 28px" }}>
-          Join thousands of young professionals who audit their expenses with an AI that doesn&apos;t hold back.
-        </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 14 }}>
-          <button
-            onClick={handleLaunchVinit}
-            style={{
-              background: "#ffe27a",
-              color: "#161616",
-              border: "none",
-              padding: "14px 24px",
-              fontWeight: 700,
-              fontSize: 14,
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              cursor: "pointer",
-            }}
-          >
-            Instant Demo (Vinit) ⚡
-          </button>
-          <Link
-            href="/login"
-            style={{
-              background: "var(--acc)",
-              color: "#fff",
-              border: "none",
-              padding: "14px 24px",
-              fontWeight: 700,
-              fontSize: 14,
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              textDecoration: "none",
-            }}
-          >
-            Create Free Account →
-          </Link>
-        </div>
-      </section>
+          {/* Left Column: Interactive Affordability Calculator */}
+          <div className="pass" style={{ padding: 22 }}>
+            <span className="tag" style={{ position: "absolute", top: -10, right: 14 }}>
+              Interactive Sandbox
+            </span>
+            <h2 style={{ fontSize: 22, marginBottom: 4 }}>Can I Afford This?</h2>
+            <div className="hand" style={{ fontSize: 20, marginBottom: 16 }}>
+              test any purchase against your cash runway
+            </div>
 
-      {/* ── Brutalist Footer ── */}
-      <footer
-        style={{
-          background: "var(--paper)",
-          borderTop: "3px solid var(--ink)",
-          padding: "20px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontSize: 12,
-          color: "var(--mute)",
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <div>© {new Date().getFullYear()} BUDGET BUDDY INDIA · CRAFTED WITH INK & CODE 🇮🇳</div>
-        <div style={{ display: "flex", gap: 16 }}>
-          <a
-            href="https://github.com/vinith17-k/budget-buddy-india"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--ink)", fontWeight: 700, textDecoration: "none" }}
+            <form onSubmit={runAffordabilityTest} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="form-row">
+                <label>Monthly In-Hand Salary (₹)</label>
+                <input
+                  type="number"
+                  value={testSalary}
+                  onChange={(e) => setTestSalary(e.target.value)}
+                  style={{ background: "var(--paper)" }}
+                />
+              </div>
+
+              <div className="form-row">
+                <label>Item / Expense Name</label>
+                <input
+                  type="text"
+                  value={testItem}
+                  onChange={(e) => setTestItem(e.target.value)}
+                  style={{ background: "var(--paper)" }}
+                />
+              </div>
+
+              <div className="form-row">
+                <label>Price in INR (₹)</label>
+                <input
+                  type="number"
+                  value={testAmount}
+                  onChange={(e) => setTestAmount(e.target.value)}
+                  style={{ background: "var(--paper)" }}
+                />
+              </div>
+
+              <button type="submit" className="btn go" style={{ marginTop: 6, minHeight: 44, width: "100%" }}>
+                Calculate Financial Impact →
+              </button>
+            </form>
+
+            {calculated && (
+              <div className="card" style={{ marginTop: 18 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className={calculated.stampClass}>{calculated.verdict}</div>
+                  <span className="tag">{calculated.runwayDays} Days Runway</span>
+                </div>
+                <div className="row" style={{ marginTop: 10 }}>
+                  <span>Income consumed</span>
+                  <b>{calculated.impactPct}%</b>
+                </div>
+                <div style={{ fontSize: 12, marginTop: 8, color: "var(--ink)", lineHeight: 1.4 }}>
+                  {calculated.explanation}
+                </div>
+                <div className="hatched" aria-hidden />
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Sticky Notes & Feature Showcase */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Yellow Sticky Note: Bank SMS Parser */}
+            <div className="note y">
+              <span className="pin" />
+              <div className="hand">SMS & UPI Auto-Parse</div>
+              <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
+                Paste raw SMS alerts directly into the chat:
+              </div>
+              <div
+                style={{
+                  background: "rgba(0,0,0,0.06)",
+                  border: "1.5px dashed #161616",
+                  padding: "8px 10px",
+                  fontSize: 11,
+                  fontFamily: "'Space Mono', monospace",
+                  marginTop: 8,
+                }}
+              >
+                &ldquo;Sent Rs.450 from HDFC Bank to SWIGGY on 18-OCT-26 UPI:9421&rdquo;
+              </div>
+              <div style={{ fontSize: 12, marginTop: 8, fontWeight: 700 }}>
+                ⚡ Auto-resolves amount, vendor & category with 100+ merchant keywords.
+              </div>
+            </div>
+
+            {/* Blue Sticky Note: Zero Hallucination Guarantee */}
+            <div className="note u">
+              <span className="pin" />
+              <div className="hand">Zero Financial Hallucination</div>
+              <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
+                Most AI coaches guess math. Budget Coach uses pure TypeScript logic for 50/30/20 budgets, daily burn rate, and savings runway.
+              </div>
+              <div className="band" style={{ marginTop: 10 }}>
+                Hard math verified · Groq LPU Explains
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* ── Brutalist Footer ── */}
+        <footer
+          style={{
+            borderTop: "2px solid var(--ink)",
+            background: "var(--paper)",
+            padding: "16px 20px",
+            marginTop: "auto",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1080,
+              margin: "0 auto",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              fontSize: 12,
+              color: "var(--mute)",
+            }}
           >
-            GitHub Repo ↗
-          </a>
-          <span style={{ color: "var(--acc)", fontWeight: 700 }}>Groq llama-3.3-70b-versatile Active</span>
-        </div>
-      </footer>
-    </div>
+            <div>BUDGET COACH · PERSONAL EXPENSE AUDITOR 🇮🇳</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span className="tag">Level 4 Safe</span>
+              <span>Groq Llama 3.3 Active</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 }

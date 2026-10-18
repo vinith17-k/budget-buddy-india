@@ -65,8 +65,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      {/* Brutalist SVG filter for rough card edges */}
+    <>
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
         <filter id="rough">
           <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t" />
@@ -74,302 +73,166 @@ export default function LoginPage() {
         </filter>
       </svg>
 
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 440,
-          background: "var(--paper)",
-          border: "3px solid var(--ink)",
-          boxShadow: "8px 8px 0 var(--ink)",
-          padding: "32px 28px",
-          position: "relative",
-        }}
-      >
-        {/* Header Ribbon */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <Link
-            href="/"
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              textDecoration: "none",
-              color: "var(--ink)",
-              border: "1.5px solid var(--ink)",
-              padding: "4px 8px",
-              background: "#fff",
-            }}
-          >
-            ← Back to Home
-          </Link>
-          <span
-            style={{
-              fontFamily: "'Caveat', cursive",
-              fontSize: 20,
-              color: "var(--acc)",
-              fontWeight: 700,
-            }}
-          >
-            Zero friction access
-          </span>
-        </div>
-
-        <h1
-          style={{
-            fontFamily: "'Archivo Black', sans-serif",
-            fontSize: 26,
-            lineHeight: 1.1,
-            textTransform: "uppercase",
-            marginBottom: 6,
-          }}
-        >
-          {tab === "login" ? "Enter Budget Vault" : "Create Clean Slate"}
-        </h1>
-        <p style={{ color: "var(--mute)", fontSize: 13, marginBottom: 24 }}>
-          {tab === "login"
-            ? "Sign in with your name & PIN or jump straight in with demo credentials."
-            : "Set up your in-hand salary and get a custom 50/30/20 budget in 30 seconds."}
-        </p>
-
-        {/* 1-Click Demo User Banner */}
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div
+          className="pass"
           style={{
-            background: "#ffe27a",
-            border: "2px solid var(--ink)",
-            padding: 14,
-            marginBottom: 24,
-            boxShadow: "3px 3px 0 var(--ink)",
+            width: "100%",
+            maxWidth: 440,
+            padding: "28px 24px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase" }}>⚡ Instant Demo Access</span>
-            <span
+          {/* Header Tag */}
+          <span className="tag" style={{ position: "absolute", top: -10, right: 14 }}>
+            Zero Friction Vault
+          </span>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <Link
+              href="/"
               style={{
-                fontSize: 10,
-                background: "var(--ink)",
-                color: "#ffe27a",
-                padding: "2px 6px",
+                fontSize: 12,
                 fontWeight: 700,
+                textDecoration: "none",
+                color: "var(--ink)",
+                border: "1.5px solid var(--ink)",
+                padding: "3px 8px",
+                background: "var(--paper)",
               }}
             >
-              PRE-CONFIGURED
+              ← Back
+            </Link>
+            <span className="hand" style={{ fontSize: 20 }}>
+              instant budget access
             </span>
           </div>
-          <p style={{ fontSize: 12, color: "#161616", marginBottom: 10 }}>
-            Experience the full app as <b>Vinit</b> (₹25,000 salary, pre-seeded Indian UPI transactions, live Groq AI).
-          </p>
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            style={{
-              width: "100%",
-              background: "var(--ink)",
-              color: "#fff",
-              border: "none",
-              padding: "10px 14px",
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            Launch as Vinit →
-          </button>
-        </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0" }}>
-          <div style={{ flex: 1, height: 2, background: "var(--ink)" }} />
-          <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--mute)" }}>
-            OR USE YOUR PROFILE
-          </span>
-          <div style={{ flex: 1, height: 2, background: "var(--ink)" }} />
-        </div>
-
-        {/* Tab Toggle */}
-        <div style={{ display: "flex", border: "2px solid var(--ink)", marginBottom: 20 }}>
-          <button
-            type="button"
-            onClick={() => {
-              setTab("login");
-              setError("");
-            }}
-            style={{
-              flex: 1,
-              padding: "8px 0",
-              fontWeight: 700,
-              fontSize: 12,
-              border: "none",
-              borderRight: "2px solid var(--ink)",
-              background: tab === "login" ? "var(--ink)" : "var(--paper)",
-              color: tab === "login" ? "#fff" : "var(--ink)",
-              cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-            }}
-          >
-            Existing Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab("signup");
-              setError("");
-            }}
-            style={{
-              flex: 1,
-              padding: "8px 0",
-              fontWeight: 700,
-              fontSize: 12,
-              border: "none",
-              background: tab === "signup" ? "var(--ink)" : "var(--paper)",
-              color: tab === "signup" ? "#fff" : "var(--ink)",
-              cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-            }}
-          >
-            New User Setup
-          </button>
-        </div>
-
-        {error && (
-          <div
-            style={{
-              background: "#ffb4a2",
-              border: "2px solid var(--acc)",
-              padding: "8px 12px",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#6b1400",
-              marginBottom: 16,
-            }}
-          >
-            ⚠️ {error}
+          <h2 style={{ fontSize: 24, marginBottom: 4 }}>
+            {tab === "login" ? "Enter Vault" : "Create Budget"}
+          </h2>
+          <div style={{ color: "var(--mute)", fontSize: 12, marginBottom: 18 }}>
+            {tab === "login"
+              ? "Access your personal budget or test drive the instant demo."
+              : "Set your monthly income and get an instant custom 50/30/20 envelope."}
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>
-              Your Name
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Rahul, Priya, Alex"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "2px solid var(--ink)",
-                background: "#fff",
-                fontFamily: "'Space Mono', monospace",
-                fontSize: 14,
-                outline: "none",
+          {/* 1-Click Demo Banner styled as yellow sticky note */}
+          <div className="note y" style={{ marginBottom: 20, transform: "none" }}>
+            <span className="pin" />
+            <div className="hand">Quick Demo Access</div>
+            <div style={{ fontSize: 12, marginTop: 4, marginBottom: 10, lineHeight: 1.4 }}>
+              Jump straight into the active coach as <b>Vinit</b> (₹25k income, UPI transactions, live Groq AI).
+            </div>
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="btn go"
+              style={{ width: "100%", minHeight: 38, fontSize: 12 }}
+            >
+              Launch Demo as Vinit →
+            </button>
+          </div>
+
+          {/* Tab Selector */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setTab("login");
+                setError("");
               }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>
-              4-Digit Passcode / PIN
-            </label>
-            <input
-              type="password"
-              maxLength={6}
-              placeholder="••••"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "2px solid var(--ink)",
-                background: "#fff",
-                fontFamily: "'Space Mono', monospace",
-                fontSize: 14,
-                letterSpacing: 4,
-                outline: "none",
+              className={`chip ${tab === "login" ? "go" : ""}`}
+              style={{ flex: 1, minHeight: 38, fontSize: 12 }}
+            >
+              Existing User
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTab("signup");
+                setError("");
               }}
-            />
+              className={`chip ${tab === "signup" ? "go" : ""}`}
+              style={{ flex: 1, minHeight: 38, fontSize: 12 }}
+            >
+              New Profile
+            </button>
           </div>
 
-          {tab === "signup" && (
-            <>
-              <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>
-                  Monthly In-Hand Income (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="35000"
-                  value={income}
-                  onChange={(e) => setIncome(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "2px solid var(--ink)",
-                    background: "#fff",
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 14,
-                    outline: "none",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>
-                  Fixed Commitments (Rent + EMIs in ₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="10000"
-                  value={fixedExpenses}
-                  onChange={(e) => setFixedExpenses(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "2px solid var(--ink)",
-                    background: "#fff",
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 14,
-                    outline: "none",
-                  }}
-                />
-              </div>
-            </>
+          {error && (
+            <div
+              style={{
+                background: "#ffb4a2",
+                border: "2px solid var(--acc)",
+                padding: "6px 10px",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#6b1400",
+                marginBottom: 14,
+              }}
+            >
+              ⚠️ {error}
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              background: "var(--acc)",
-              color: "#fff",
-              border: "2px solid var(--ink)",
-              boxShadow: "4px 4px 0 var(--ink)",
-              padding: "12px 16px",
-              fontWeight: 700,
-              fontSize: 14,
-              fontFamily: "'Space Mono', monospace",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              marginTop: 10,
-              transition: "transform 0.1s",
-            }}
-          >
-            {loading ? "Verifying..." : tab === "login" ? "Open Dashboard →" : "Generate Custom Budget →"}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="form-row">
+              <label>Your Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Rahul, Priya"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{ background: "var(--paper)" }}
+              />
+            </div>
 
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <span style={{ fontSize: 11, color: "var(--mute)" }}>
-            🔒 Local storage + isolated user vaults. Zero tracking.
-          </span>
+            <div className="form-row">
+              <label>4-Digit PIN</label>
+              <input
+                type="password"
+                maxLength={6}
+                placeholder="••••"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                style={{ background: "var(--paper)", letterSpacing: 4 }}
+              />
+            </div>
+
+            {tab === "signup" && (
+              <>
+                <div className="form-row">
+                  <label>Monthly In-Hand Income (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="35000"
+                    value={income}
+                    onChange={(e) => setIncome(e.target.value)}
+                    style={{ background: "var(--paper)" }}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label>Fixed Commitments (Rent + EMIs in ₹)</label>
+                  <input
+                    type="number"
+                    placeholder="10000"
+                    value={fixedExpenses}
+                    onChange={(e) => setFixedExpenses(e.target.value)}
+                    style={{ background: "var(--paper)" }}
+                  />
+                </div>
+              </>
+            )}
+
+            <button type="submit" disabled={loading} className="btn go" style={{ marginTop: 8, minHeight: 46 }}>
+              {loading ? "Verifying..." : tab === "login" ? "Open Dashboard →" : "Create My Budget →"}
+            </button>
+          </form>
+
+          <div className="hatched" aria-hidden style={{ marginTop: 18 }} />
         </div>
       </div>
-    </div>
+    </>
   );
 }
